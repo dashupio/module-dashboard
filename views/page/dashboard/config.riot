@@ -1,0 +1,294 @@
+<page-application-config>
+  <div>
+    <div if={ state.key } class="mb-3">
+      <label class="form-label">
+        API Key
+      </label>
+      <div class="mb-3">
+        <input class="form-control" readonly="true" name="key" value={ state.key } />
+      </div>
+    </div>
+    <hr />
+    <div class="card card-body">
+      <div class="card card-permission bg-transparent shadow-none mb-2">
+        <div class="card-body d-flex align-items-center">
+
+          <div class="ml-auto">
+            <button class={ classes({ 'btn ml-2' : true, 'btn-success' : hasAll('view'), 'btn-warning' : hasAny('view'), 'btn-secondary' : !hasAny('view') && !hasAll('view') }) } data-toggle="tooltip" data-placement="top" title="Can View" onclick={ (e) => onAll(e, 'view') }>
+              <i class="fa fa-eye" />
+            </button>
+            <button class={ classes({ 'btn ml-2' : true, 'btn-success' : hasAll('submit'), 'btn-warning' : hasAny('submit'), 'btn-secondary' : !hasAny('submit') && !hasAll('submit') }) } data-toggle="tooltip" data-placement="top" title="Can Update" onclick={ (e) => onAll(e, 'submit') }>
+              <i class="fa fa-pencil" />
+            </button>
+            <button class={ classes({ 'btn ml-2' : true, 'btn-success' : hasAll('manage'), 'btn-warning' : hasAny('manage'), 'btn-secondary' : !hasAny('manage') && !hasAll('manage') }) } data-toggle="tooltip" data-placement="top" title="Can Manage" onclick={ (e) => onAll(e, 'manage') }>
+              <i class="fa fa-cog" />
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <dashup-permission each={ (page, i) in getPages() } page={ page } has-acl={ hasAcl } add-acl={ addAcl } remove-acl={ removeAcl } />
+    </div>
+  </div>
+
+  <script>
+    // require base class
+    import Bottleneck from 'bottleneck';
+
+    // export default
+    export default class PageApplicationConfig {
+
+      /**
+       * on before mount
+       */
+      onBeforeMount(...args) {
+        // on before mount
+        super.onBeforeMount(...args);
+
+        // data acls
+        this.acls = this.props.page.get('data.acls') || [];
+
+        // bind
+        this.hasAcl = this.hasAcl.bind(this);
+        this.addAcl = this.addAcl.bind(this);
+        this.removeAcl = this.removeAcl.bind(this);
+
+        // create bottleneck
+        this.bottleneck = new Bottleneck({
+          minTime       : 500, // maximum updates 1 per 2 seconds
+          highWater     : 1, // maximum 2 updates in queue
+          maxConcurrent : 1
+        });
+
+        // set force update
+        this.scheduleUpdate = () => {
+          // schedule
+          this.bottleneck.schedule(() => {
+            // schedule update
+            return this.props.data('acls', this.acls);
+          });
+        };
+      }
+
+      /**
+       * on mounted
+       */
+      onMounted(...args) {
+        // run super
+        super.onMounted(...args);
+
+        // check frontend
+        if (!this.eden.frontend) return;
+
+        // init
+        this.init();
+      }
+
+      /**
+       * init
+       */
+      async init() {
+        // loading
+        this.loading('key', true);
+
+        // fetch grid
+        const res = await fetch(`/app/application/${this.props.page.get('_id')}`, {
+          method : 'POST',
+        });
+
+        // update
+        this.update(await res.json());
+
+        // loading
+        this.loading('key', false);
+      }
+
+      /**
+       * on settings
+       *
+       * @param {Event} e
+       */
+      show() {
+        // show modal
+        this.refs.config.show();
+      }
+
+      /**
+       * on settings
+       *
+       * @param {Event} e
+       */
+      hide() {
+        // show modal
+        this.refs.config.hide();
+      }
+
+      /**
+       * get items
+       */
+      getPages() {
+        // values
+        return Array.from(this.props.dashup.get('pages').values()).filter((page) => {
+          // return parent
+          return !page.get('archived') && (!page.get('parent') || page.get('parent') === 'root');
+        }).sort((a, b) => {
+          // get order
+          if (a.get('order') > b.get('order')) return 1;
+          if (a.get('order') < b.get('order')) return -1;
+
+          // return no change
+          return 0;
+        });
+      }
+
+      /**
+       * has all
+       */
+      hasAll(type) {
+        // get pages
+        return !Array.from(this.props.dashup.get('pages').values()).find((page) => {
+          // return has
+          return !this.hasAcl(page, type);
+        });
+      }
+
+      /**
+       * has all
+       */
+      hasAny(type) {
+        // get pages
+        return !this.hasAll(type) && !!Array.from(this.props.dashup.get('pages').values()).find((page) => {
+          // return has
+          return this.hasAcl(page, type);
+        });
+      }
+
+      /**
+       * has all
+       */
+      onAll(e, type) {
+        // prevent
+        e.preventDefault();
+        e.stopPropagation();
+
+        // check toggle
+        if (this.hasAll(type)) {
+          // return has
+          this.acls = this.acls.filter((acl) => {
+            return !`${acl}`.includes(type);
+          });
+        } else {
+          // add pages
+          Array.from(this.props.dashup.get('pages').values()).find((page) => {
+            // return has
+            if (!this.hasAcl(`${page.get('_id')}.${type}`)) {
+              // check view
+              this.acls.push(`${page.get('_id')}.${type}`);
+            }
+          });
+        }
+
+        // update
+        this.scheduleUpdate();
+      }
+
+      /**
+       * has one
+       */
+      hasAcl(page, type) {
+        // check has permission
+        if (this.acls.find((acl) => acl === true)) return true;
+
+        // check type
+        if (!type) return this.acls.includes(page);
+
+        // check find
+        return this.hasAcl(`${page.get('_id')}.${type}`);
+      }
+
+      /**
+       * add acl
+       */
+      addAcl(page, type, noSubs) {
+        // add
+        if (!this.hasAcl(`${page.get('_id')}.${type}`)) {
+          this.acls.push(`${page.get('_id')}.${type}`);
+        }
+
+        // remove from all sub pages
+        const subs = noSubs ? [] : Array.from(this.props.dashup.get('pages').values()).filter((p) => {
+          // check parent
+          return p.get('parent') === page.get('_id');
+        });
+        const parent = Array.from(this.props.dashup.get('pages').values()).find((p) => p.get('_id') === page.get('parent'));
+
+        // add to subs
+        subs.forEach((sub) => this.addAcl(sub, type));
+
+        // parent
+        if (parent) this.addAcl(parent, type, true);
+
+        // update
+        this.scheduleUpdate();
+      }
+
+      /**
+       * remove acl
+       */
+      removeAcl(page, type, noSubs) {
+        // add
+        this.acls = this.acls.filter((a) => a !== `${page.get('_id')}.${type}`);
+
+        // remove from all sub pages
+        const subs = noSubs ? [] : Array.from(this.props.dashup.get('pages').values()).filter((p) => {
+          // check parent
+          return p.get('parent') === page.get('_id');
+        });
+
+        // add to subs
+        subs.forEach((sub) => this.removeAcl(sub, type));
+
+        // update
+        this.scheduleUpdate();
+      }
+
+      /**
+       * ref
+       */
+      ref(name) {
+        // set refs
+        if (!this.refs) this.refs = {};
+
+        // return ref function
+        return (that) => {
+          // set ref
+          this.refs[name] = that;
+        };
+      }
+      
+      /**
+       * set classes
+       */
+      classes(obj = {}) {
+        // return classes
+        return Object.keys(obj).filter((key) => !!obj[key]).join(' ');
+      }
+
+      /**
+       * set loading
+       */
+      loading(type, way) {
+        // set loading
+        if (!this.__loading) this.__loading = new Map();
+
+        // check loading
+        if (!type) return !!Array.from(this.__loading.values()).find((v) => v);
+        if (typeof way === 'undefined') return !!this.__loading.get(type);
+
+        // set loading
+        this.__loading.set(type, way);
+        this.update();
+      }
+    }
+  </script>
+</page-application-config>
