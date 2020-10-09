@@ -2,6 +2,7 @@
 const { Module } = require('@dashup/module');
 
 // import base
+const ChartBlock = require('./blocks/chart');
 const DashboardPage = require('./pages/dashboard');
 
 /**
@@ -25,6 +26,9 @@ class DashboardModule extends Module {
   register(fn) {
     // register pages
     fn('page', DashboardPage);
+
+    // register blocks
+    fn('block', ChartBlock);
   }
 }
 
