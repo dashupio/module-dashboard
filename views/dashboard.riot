@@ -1,5 +1,441 @@
 <dashboard>
   <div>
+    <div ref="editable" class="dashup-dashboard grid-stack">
 
+      <div each={ (block, i) in props.page.get('data.blocks', []) } class="grid-stack-item" data-gs-x={ block._grid.x || '0' } data-gs-y={ block._grid.y || '0' } data-gs-width={ block._grid.w || 1 } data-gs-height={ block._grid.h || 1 }>
+        <div class="grid-stack-item-content">
+          <div class="eden-block d-flex flex-1" data-block={ block.uuid } id={ `block-${block.uuid}` }>
+
+            <div class="eden-block-hover">
+              <div class="row row-eq-height">
+                <div class="col-8 d-flex align-items-center">
+                  <div class="w-100">
+                    <slot name="header" />
+                  </div>
+                </div>
+                <div class="col-4 d-flex align-items-center">
+                  <div class="w-100">
+                    <div class="btn-group float-right">
+                      <button class="btn btn-sm btn-secondary" onclick={ (e) => onUpdateBlock(e, block) }>
+                        <i class="fa fa-pencil-alt" />
+                      </button>
+                      <button class="btn btn-sm btn-secondary" onclick={ (e) => onRemoveBlock(e, block) }>
+                        <i class="fa fa-times" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div is="dashup-view" type="block" view="view" struct={ block.type } block={ block } remove={ (e) => onRemoveBlock(e, block) } set={ (k, v) => onSetBlock(block, k, v) } { ...getProps() } />
+
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-stack-item grid-stack-item-add" data-gs-x={ props.page.get('data.add._grid.x') || '0' } data-gs-y={ props.page.get('data.add._grid.y') || '0' } data-gs-width={ props.page.get('data.add._grid.w') || '4' } data-gs-height={ props.page.get('data.add._grid.h') || '2' }>
+        <div class="grid-stack-item-content move">
+          <div class="grid-add d-flex align-items-center" onclick={ (e) => onCreateBlock(e) }>
+            <div class="w-100 text-center">
+              Add Widget
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <dashboard-update ref={ ref('config') } if={ state.block } block={ state.block } get-block={ getBlock } remove-action={ () => onConfirmRemove(state.block) } set={ (k, v) => onSetBlock(state.block, k, v) } { ...getProps() } />
+    <dashboard-sidebar ref={ ref('sidebar') } blocks={ props.blocks } add-block={ (type) => onAddBlock(type) } />
   </div>
+
+  <script>
+    // import base
+    import uuid from 'uuid';
+    import dotProp from 'dot-prop';
+
+    // export default
+    export default class Dashboard {
+      
+      /**
+       * on before mount
+       *
+       * @param {Object} props
+       */
+      onBeforeMount(props) {
+        // bind methods
+        this.getBlock = this.getBlock.bind(this);
+        this.onSetBlock = this.onSetBlock.bind(this);
+        this.onCreateBlock = this.onCreateBlock.bind(this);
+        this.onUpdateBlock = this.onUpdateBlock.bind(this);
+        this.onRemoveBlock = this.onRemoveBlock.bind(this);
+      }
+
+      /**
+       * on mounted
+       *
+       * @param {Object} props
+       */
+      onMounted() {       
+        // check frontend
+        if (typeof window === 'undefined') return;
+
+        // init dragula
+        if (!this.grid) this.initGrid();
+      }
+      
+      /**
+       * get props
+       */
+      getProps() {
+        // get props
+        const props = { ...(this.props) };
+
+        // delete props
+        delete props.set;
+        delete props.view;
+        delete props.type;
+        delete props.struct;
+
+        // return props
+        return props;
+      }
+
+      /**
+      * on add block
+      *
+      * @param  {Event} e
+      *
+      * @return {*}
+      */
+      onCreateBlock (e) {
+        // prevent
+        e.preventDefault();
+        e.stopPropagation();
+
+        // open modal
+        if (this.refs.sidebar) this.refs.sidebar.show();
+      }
+
+      /**
+      * adds block by type
+      *
+      * @param  {String} type
+      *
+      * @return {*}
+      */
+      async onAddBlock (type) {
+        // set type
+        if (!type) type = this.refs.sidebar.type;
+
+        // lowest rightest
+        const lowestRightest = (this.props.page.get('data.blocks') || []).reduce((accum, block) => {
+          // get bottommost
+          const right = parseInt(block._grid.x) + parseInt(block._grid.w);
+          const bottom = parseInt(block._grid.h) + parseInt(block._grid.y);
+
+          const aRight = (parseInt(accum._grid.x) + parseInt(accum._grid.w));
+          const aBottom = (parseInt(accum._grid.h) + parseInt(accum._grid.y));
+
+          // lower bottom
+          if (bottom > aBottom) {
+            // return
+            return block;
+          } else if (bottom === aBottom && right > aRight) {
+            // return block
+            return block;
+          }
+
+          // return accumulated
+          return accum;
+        }, {
+          _grid : this.props.page.get('data.add._grid') || {
+            w : 4,
+            h : 2,
+            x : 0,
+            y : 0
+          }
+        });
+
+        // bottom
+        const right = lowestRightest._grid.x + lowestRightest._grid.w;
+        const bottom = lowestRightest._grid.y + lowestRightest._grid.h;
+
+        // create block
+        let block = {
+          'uuid' : uuid(),
+          'type' : type,
+          '_grid' : this.props.page.get('data.add._grid') || {
+            w : 4,
+            h : 2,
+            x : 0,
+            y : 0
+          },
+        };
+
+        // set new add placement
+        this.props.page.set('data.add._grid', {
+          w : 4,
+          h : 2,
+          x : (right >= 12 ? 0 : right),
+          y : (right >= 12 ? bottom : bottom),
+        });
+
+        // check positions
+        if (!this.props.page.get('data.blocks')) this.props.page.set('data.blocks', []);
+
+        // push block
+        this.props.page.get('data.blocks').push(block);
+
+        // push blocks
+        await this.props.data('blocks', this.props.page.get('data.blocks'));
+
+        // save placement
+        await this.onSave(block);
+      }
+
+      /**
+      * on refresh block
+      *
+      * @param  {Event}  e
+      * @param  {Object} block
+      */
+      onSave (block) {
+        // save block
+        return this.onSetBlock(block);
+      }
+
+      /**
+       * on set
+       */
+      async onSetBlock(block, key, value) {
+        // set
+        if (key) dotProp.set(block, key, value);
+
+        // call update
+        let blocks = (this.props.page.get('data.blocks') || []);
+
+        // get saved field
+        const savedBlock = await this.props.dashup.action({
+          type   : 'page',
+          struct : 'dashboard',
+        }, 'block.save', block);
+
+        // loop
+        Object.keys(savedBlock).forEach((key) => {
+          // set data
+          block[key] = savedBlock[key];
+        });
+        
+        // set fields
+        await this.props.data('blocks', blocks);
+      }
+
+      /**
+       * on refresh block
+       *
+       * @param  {Event}  e
+       * @param  {Object} block
+       */
+      onUpdateBlock (e, block) {
+        // prevent
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+
+        // update block
+        this.update({
+          block,
+        });
+
+        // refs show
+        this.refs.config.show();
+      }
+
+      /**
+       * on refresh block
+       *
+       * @param  {Event}  e
+       * @param  {Object} block
+       */
+      onRemoveBlock (e, block) {
+        // prevent
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+
+        // update block
+        this.update({
+          block,
+        });
+
+        // refs show
+        this.refs.config.show();
+        this.refs.config.onRemove(e);
+      }
+
+      /**
+       * on refresh block
+       *
+       * @param  {Event}  e
+       * @param  {Object} block
+       */
+      async onConfirmRemove (block) {
+        // get positions
+        const blocks = (this.props.page.get('data.blocks') || []).filter((b) => b.uuid !== block.uuid);
+
+        // set blocks
+        await this.props.data('blocks', blocks);
+        this.update();
+
+        // update grid
+        this.updateGrid();
+      }
+
+      /**
+       * get block
+       */
+      getBlock(block) {
+        // return block
+        return block ? this.props.blocks.find((b) => b.type === block.type) : {};
+      }
+
+      /**
+       * init dragula
+       */
+      initGrid () {
+        // require gridstack
+
+
+        // require ui
+        require('jquery-ui/ui/data');
+        require('jquery-ui/ui/version');
+        require('jquery-ui/ui/plugin');
+        require('jquery-ui/ui/scroll-parent');
+        require('jquery-ui/ui/safe-blur');
+        require('jquery-ui/ui/safe-active-element');
+        require('jquery-ui/ui/disable-selection');
+        require('jquery-ui/ui/widget');
+        require('jquery-ui/ui/widgets/mouse');
+        require('jquery-ui/ui/widgets/resizable');
+        require('jquery-ui/ui/widgets/draggable');
+
+        // require gridstack
+        const GridStack = require('./dashboard/gridstack').GridStack;
+
+        // require local
+        require('./dashboard/jquery-ui');
+        
+        // gridstack
+        GridStack.init({
+          draggable : {
+            handles : '.move',
+          }
+        }, this.$('[ref="editable"]')).on('change', (e) => {
+          // check target
+          if (this.$('[ref="editable"]') !== e.target) return true;
+
+          // commit to items
+          $('.grid-stack-item', this.$('[ref="editable"]')).each((i, item) => {
+            // child
+            const child = $(item);
+            const data = child.data();
+            let update = false;
+
+            // get block
+            const block = (this.props.page.get('data.blocks') || []).find(b => b.uuid === $('[data-block]', item).attr('data-block'));
+            
+            // check block
+            if (child.is('.grid-stack-item-add')) {
+              // set add grid
+              this.props.data('add', {
+                _grid : {
+                  x : data.gsX,
+                  y : data.gsY,
+                  h : data.gsHeight,
+                  w : data.gsWidth,
+                }
+              });
+            } else {
+              // update
+              update = true;
+
+              // set grid
+              block._grid = {
+                x : data.gsX,
+                y : data.gsY,
+                h : data.gsHeight,
+                w : data.gsWidth,
+              };
+            }
+
+            // save
+            if (update) this.props.data('blocks', this.props.page.get('data.blocks'));
+            this.update();
+          });
+        });
+
+        // set grid
+        this.grid = $(this.$('[ref="editable"]')).data('gridstack');
+      }
+
+      /**
+       * updates grid
+       */
+      updateGrid() {
+        // check grid
+        if (!this.grid || !this.grid.destroy) return;
+        
+        // remove grid
+        this.grid.destroy();
+
+        // update
+        this.update({
+          show : false,
+        });
+        
+        // timeout
+        setTimeout(() => {
+          this.update({
+            show : true,
+          });
+
+          // init grid
+          this.initGrid();
+        });
+      }
+
+      /**
+       * ref
+       */
+      ref(name) {
+        // set refs
+        if (!this.refs) this.refs = {};
+
+        // return ref function
+        return (that) => {
+          // set ref
+          this.refs[name] = that;
+        };
+      }
+
+      /**
+       * set loading
+       */
+      loading(type, way) {
+        // set loading
+        if (!this.__loading) this.__loading = new Map();
+
+        // check loading
+        if (!type) return !!Array.from(this.__loading.values()).find((v) => v);
+        if (typeof way === 'undefined') return !!this.__loading.get(type);
+
+        // set loading
+        this.__loading.set(type, way);
+        this.update();
+      }
+    }
+  </script>
 </dashboard>

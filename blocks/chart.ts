@@ -20,7 +20,7 @@ export default class ChartBlock extends Struct {
    */
   get icon() {
     // return page type label
-    return 'fa fa-chart';
+    return 'fa fa-chart-line';
   }
 
   /**
@@ -45,6 +45,8 @@ export default class ChartBlock extends Struct {
   get views() {
     // return object of views
     return {
+      chart : 'chart',
+
       view   : 'block/chart/view',
       config : 'block/chart/config',
     };

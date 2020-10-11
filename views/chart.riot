@@ -1,0 +1,55 @@
+<chart>
+  <div class="chart h-100 w-100" />
+
+  <script>
+    // import apexcharts
+    import ApexCharts from 'apexcharts';
+
+    // export default
+    export default class Chart {
+
+      onMounted(...args) {
+        // bind init
+        this.init = this.init.bind(this);
+
+        // init
+        this.init();
+      }
+
+      /**
+       * should update
+       */
+      shouldUpdate() {
+        // return false
+        return !this.done;
+      }
+
+      /**
+       * init
+       */
+      init() {
+        // timeout
+        setTimeout(() => {
+          // check frontend
+          const opts = this.props.options || this.props.chart;
+
+          // check
+          if (typeof window === 'undefined' || !this.$('.chart') || !opts) return;
+
+          // set done
+          this.done = true;
+
+          // set height
+          opts.chart.width = $(this.$('.chart')).width();
+          opts.chart.height = $(this.$('.chart')).height();
+          
+          // create chart
+          const chart = new ApexCharts(this.$('.chart'), opts);
+
+          // render
+          chart.render();
+        }, 100);
+      }
+    }
+  </script>
+</chart>

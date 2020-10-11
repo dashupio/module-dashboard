@@ -8,6 +8,19 @@ import { Struct } from '@dashup/module';
 export default class DashboardPage extends Struct {
 
   /**
+   * construct form page
+   *
+   * @param args 
+   */
+  constructor(...args) {
+    // run super
+    super(...args);
+
+    // save field
+    this.blockSaveAction = this.blockSaveAction.bind(this);
+  }
+
+  /**
    * returns page type
    */
   get type() {
@@ -20,7 +33,7 @@ export default class DashboardPage extends Struct {
    */
   get icon() {
     // return page type label
-    return 'fa fa-users';
+    return 'fa fa-chart-line';
   }
 
   /**
@@ -34,9 +47,11 @@ export default class DashboardPage extends Struct {
   /**
    * returns page data
    */
-  get data() {
+  get actions() {
     // return page data
-    return {};
+    return {
+      'block.save' : this.blockSaveAction,
+    };
   }
 
   /**
@@ -45,6 +60,9 @@ export default class DashboardPage extends Struct {
   get views() {
     // return object of views
     return {
+      chart     : 'chart',
+      dashboard : 'dashboard',
+
       view   : 'page/dashboard/view',
       config : 'page/dashboard/config',
     };
@@ -63,6 +81,20 @@ export default class DashboardPage extends Struct {
    */
   get description() {
     // return description string
-    return 'Page Descripton';
+    return 'Data visualization dashboard page';
+  }
+
+  /**
+   * block save action
+   *
+   * @param opts 
+   * @param block 
+   */
+  async blockSaveAction(opts, block) {
+    // deafen action
+    block = await this.dashup.connection.rpc(opts, 'block.save', block);
+
+    // return block
+    return block;
   }
 }

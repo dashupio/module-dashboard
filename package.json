@@ -16,7 +16,12 @@
     "@babel/preset-env": "^7.11.5",
     "@dashup/eslint-config-dashup": "0.0.1",
     "@dashup/module": "file:../../../modules/dashup_module",
+    "apexcharts": "^3.22.0",
     "babel-plugin-add-module-exports": "^1.0.4",
-    "bottleneck": "^2.19.5"
+    "bottleneck": "^2.19.5",
+    "dot-prop": "^6.0.0",
+    "jquery-ui": "^1.12.1",
+    "moment": "^2.29.1",
+    "uuid": "^8.3.1"
   }
 }

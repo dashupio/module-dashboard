@@ -1,7 +1,263 @@
 <block-chart-view>
   <div class="card flex-1">
-    <div class="card-body">
-      TEST 2
+    <div if={ props.block.name } class="card-header">
+      { props.block.name }
+    </div>
+    <div if={ !state.loading } class="card-body d-flex flex-0 align-items-center" if={ state.total || state.total === 0 }>
+      <div class="w-100">
+        <div class={ `chart-title text-${props.block.color || 'primary'} text-bold h2 mb-0` }>
+          { state.total }
+        </div>
+        <p class="m-0 text-bold">
+          { state.last > state.current ? `-${state.last - state.current} (-${getDifference(state.last, state.current)}%)` : '' }
+          { state.last < state.current ? `+${state.current - state.last} (+${getDifference(state.last, state.current)}%)` : '' }
+          { state.last === state.current ? `No change` : '' }
+          This Month
+        </p>
+      </div>
+    </div>
+    <div if={ !state.loading } class={ `card-body d-flex flex-column chart-${props.block.color || 'primary'}` }>
+      <dashup-view if={ state.chart } dashup={ props.dashup } type="block" struct="chart" view="chart" class="d-flex flex-1" view-class="d-flex flex-1" options={ state.chart } />
     </div>
   </div>
+
+  <script>
+    // import moment
+    import moment from 'moment';
+
+    // export default
+    export default class BlockChartView {
+
+      /**
+       * on mounted
+       */
+      onMounted() {
+        // check frontend
+        if (typeof window === 'undefined') return;
+
+        // bind
+        this.init = this.init.bind(this);
+
+        // get chart then update
+        this.init();
+
+        // update
+        this.props.page.on('do.data.blocks', this.init);
+      }
+
+      /**
+       * on mounted
+       */
+      onBeforeUnmount() {
+        // check frontend
+        if (typeof window === 'undefined') return;
+
+        // update
+        this.props.page.removeListener('do.data.blocks', this.init);
+      }
+
+      /**
+       * init
+       */
+      async init() {
+        // loading
+        this.update({
+          loading : true,
+        });
+
+        // oppts
+        const opts = await this.getChart();
+
+        // loading
+        this.update({
+          ...opts,
+
+          loading : false,
+        });
+      }
+
+      /**
+       * get difference
+       */
+      getDifference(a, b) {
+        // return difference
+        return (100 * Math.abs((a - b) / ((a + b) / 2))).toFixed(2);
+      }
+
+      /**
+       * gets all fields
+       */
+      getFields() {
+        // reduce
+        return Array.from(this.props.dashup.get('pages').values()).filter((page) => {
+          // return page
+          return page.get('type') === 'form' && page.get('data.model') === this.props.block.model;
+        }).reduce((accum, page) => {
+          // check page
+          if (!page || !page.get('data.fields')) return accum;
+
+          // loop fields
+          accum.push(...page.get('data.fields'));
+
+          // return accum
+          return accum;
+        }, []);
+      }
+
+      /**
+       * get chart
+       */
+      async getChart() {
+        // return nothing
+        if (!this.props.block.model) return;
+
+        // get model
+        const model = this.props.dashup.page(this.props.block.model);
+
+        // filter
+        const filter = typeof this.props.block.filter === 'string' ? JSON.parse(this.props.block.filter) : [];
+
+        // get metric
+        const metric = this.props.block.metric || 'avg';
+        const grouping = this.props.block.grouping || 'total';
+
+        // get field
+        const field = this.props.block.field ? this.getFields().find((f) => f.uuid === this.props.block.field) : null;
+
+        // set type
+        let data = null;
+
+        // get query
+        const getQuery = () => {
+          // create query
+          let query = model;
+
+          // check filters
+          filter.forEach((where) => {
+            query = query.where(where);
+          });
+
+          // return query
+          return query;
+        };
+
+        // check grouping
+        if (grouping === 'total') {
+          // create data
+          const createData = async (fn) => {
+            // create data
+            return {
+              last : await fn(
+                getQuery()
+                .gt('created_at', moment().subtract(1, 'months').startOf('month').toDate())
+                .lt('created_at', moment().startOf('month').toDate())
+              ),
+              total : await fn(getQuery()),
+              current : await fn(
+                getQuery()
+                .gt('created_at', moment().startOf('month').toDate())
+              ),
+              chart : await Promise.all([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(async (month) => {
+                return {
+                  label  : moment().subtract(month, 'months').startOf('month').toDate(),
+                  amount : await fn(
+                    await getQuery()
+                    .gt('created_at', moment().subtract(month, 'months').startOf('month').toDate())
+                    .lt('created_at', moment().subtract((month - 1), 'months').startOf('month').toDate())
+                  )
+                };
+              })),
+            };
+          };
+
+          // get one value...
+          if (metric === 'count' || !metric) {
+            // set data
+            data = await createData((q) => {
+              // return counted
+              return q.count();
+            });
+          } else if (!field) {
+            // return json
+            return;
+          } else if (metric === 'sum') {
+            // set data
+            data = await createData(async (q) => {
+              // return counted
+              return q.gt(field.name || field.uuid, 0).sum(field.name || field.uuid) || 0;
+            });
+          } else if (metric === 'avg') {
+            // set data
+            data = await createData(async (q) => {
+              // return counted
+              return (
+                (await q.gt(field.name || field.uuid, 0).sum(field.name || field.uuid) || 0) /
+                await q.gt(field.name || field.uuid, 0).count()
+              ) || 0;
+            });
+          } else if (metric === 'min') {
+            // set data
+            data = await createData(async (q) => {
+              // get value
+              const value = await q.gt(field.name || field.uuid, 0).sort(field.name || field.uuid, 1).findOne();
+
+              // return counted
+              return value ? value.get(field.name || field.uuid) : 0;
+            });
+          } else if (metric === 'max') {
+            // set data
+            data = await createData(async (q) => {
+              // get value
+              const value = await q.gt(field.name || field.uuid, 0).sort(field.name || field.uuid, -1).findOne();
+
+              // return counted
+              return value ? value.get(field.name || field.uuid) : 0;
+            });
+          }
+        }
+
+        // check data
+        if (!data) return {};
+        
+        // return parsed data
+        return {
+          ...data,
+
+          chart : {
+            series : [{
+              name : model.get('name'),
+              data : data.chart.map((item) => item.amount),
+            }],
+            chart : {
+              type      : 'area',
+              sparkline : {
+                enabled : true
+              },
+            },
+            dataLabels : {
+              enabled : false
+            },
+            stroke : {
+              curve : 'smooth'
+            },
+            fill : {
+              opacity : 0.3
+            },
+            xaxis : {
+              type       : 'datetime',
+              categories : data.chart.map((item) => `${item.label}`),
+              crosshairs : {
+                width : 1
+              },
+            },
+            tooltip : {
+              x : {
+                format : 'dd/MM/yy HH:mm'
+              },
+            },
+          }
+        };
+      }
+    }
+  </script>
 </block-chart-view>
