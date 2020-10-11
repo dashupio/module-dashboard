@@ -51,7 +51,7 @@
 
   <script>
     // import base
-    import uuid from 'uuid';
+    import { v4 } from 'uuid';
     import dotProp from 'dot-prop';
 
     // export default
@@ -125,6 +125,7 @@
       * @return {*}
       */
       async onAddBlock (type) {
+        console.log('sup', type);
         // set type
         if (!type) type = this.refs.sidebar.type;
 
@@ -163,7 +164,7 @@
 
         // create block
         let block = {
-          'uuid' : uuid(),
+          'uuid' : v4(),
           'type' : type,
           '_grid' : this.props.page.get('data.add._grid') || {
             w : 4,
@@ -181,14 +182,13 @@
           y : (right >= 12 ? bottom : bottom),
         });
 
+        console.log(block);
+
         // check positions
         if (!this.props.page.get('data.blocks')) this.props.page.set('data.blocks', []);
 
         // push block
         this.props.page.get('data.blocks').push(block);
-
-        // push blocks
-        await this.props.data('blocks', this.props.page.get('data.blocks'));
 
         // save placement
         await this.onSave(block);

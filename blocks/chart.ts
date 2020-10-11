@@ -28,7 +28,7 @@ export default class ChartBlock extends Struct {
    */
   get title() {
     // return page type label
-    return 'Dashboard Block';
+    return 'Chart Block';
   }
 
   /**
@@ -65,6 +65,6 @@ export default class ChartBlock extends Struct {
    */
   get description() {
     // return description string
-    return 'Page Descripton';
+    return 'Create a chart on any of your models';
   }
 }
