@@ -1,10 +1,28 @@
 <page-dashboard-view>
-  <dashup-dashboard { ...props } />
+  <dashup-view view="dashboard" type="page" struct="dashboard" { ...getProps() } />
 
   <script>
 
     // export default
-    export default class PageDasboardView {
+    export default class PageDashboardView {
+
+      /**
+       * get props
+       */
+      getProps() {
+        // clone
+        const newProps = { ...(this.props) };
+
+        // delete
+        delete newProps.type;
+        delete newProps.item;
+        delete newProps.view;
+        delete newProps.class;
+        delete newProps.struct;
+
+        // return
+        return newProps;
+      }
 
     }
   </script>
