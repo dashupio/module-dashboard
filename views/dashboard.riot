@@ -1,11 +1,20 @@
 <dashboard>
   <div>
-    <div ref="editable" class="dashup-dashboard grid-stack">
+    <div ref="editable" class="dashup-dashboard grid-stack" if={ state.show }>
+
+      <div class="grid-stack-item grid-stack-item-add" data-gs-width={ props.page.get('data.add._grid.w') || '4' } data-gs-height={ props.page.get('data.add._grid.h') || '2' }>
+        <div class="grid-stack-item-content move">
+          <div class="grid-add d-flex align-items-center" onclick={ (e) => onCreateBlock(e) }>
+            <div class="w-100 text-center">
+              Add Widget
+            </div>
+          </div>
+        </div>
+      </div>
 
       <div each={ (block, i) in props.page.get('data.blocks', []) } class="grid-stack-item" data-gs-x={ block._grid.x || '0' } data-gs-y={ block._grid.y || '0' } data-gs-width={ block._grid.w || 1 } data-gs-height={ block._grid.h || 1 }>
         <div class="grid-stack-item-content">
           <div class="eden-block d-flex flex-1" data-block={ block.uuid } id={ `block-${block.uuid}` }>
-
             <div class="eden-block-hover">
               <div class="row row-eq-height">
                 <div class="col-8 d-flex align-items-center">
@@ -27,19 +36,7 @@
                 </div>
               </div>
             </div>
-
             <div is="dashup-view" type="block" view="view" struct={ block.type } block={ block } remove={ (e) => onRemoveBlock(e, block) } set={ (k, v) => onSetBlock(block, k, v) } { ...getProps() } />
-
-          </div>
-        </div>
-      </div>
-
-      <div class="grid-stack-item grid-stack-item-add" data-gs-x={ props.page.get('data.add._grid.x') || '0' } data-gs-y={ props.page.get('data.add._grid.y') || '0' } data-gs-width={ props.page.get('data.add._grid.w') || '4' } data-gs-height={ props.page.get('data.add._grid.h') || '2' }>
-        <div class="grid-stack-item-content move">
-          <div class="grid-add d-flex align-items-center" onclick={ (e) => onCreateBlock(e) }>
-            <div class="w-100 text-center">
-              Add Widget
-            </div>
           </div>
         </div>
       </div>
@@ -69,6 +66,9 @@
         this.onCreateBlock = this.onCreateBlock.bind(this);
         this.onUpdateBlock = this.onUpdateBlock.bind(this);
         this.onRemoveBlock = this.onRemoveBlock.bind(this);
+
+        // show
+        this.state.show = true;
       }
 
       /**
@@ -125,64 +125,26 @@
       * @return {*}
       */
       async onAddBlock (type) {
-        console.log('sup', type);
         // set type
         if (!type) type = this.refs.sidebar.type;
 
-        // lowest rightest
-        const lowestRightest = (this.props.page.get('data.blocks') || []).reduce((accum, block) => {
-          // get bottommost
-          const right = parseInt(block._grid.x) + parseInt(block._grid.w);
-          const bottom = parseInt(block._grid.h) + parseInt(block._grid.y);
-
-          const aRight = (parseInt(accum._grid.x) + parseInt(accum._grid.w));
-          const aBottom = (parseInt(accum._grid.h) + parseInt(accum._grid.y));
-
-          // lower bottom
-          if (bottom > aBottom) {
-            // return
-            return block;
-          } else if (bottom === aBottom && right > aRight) {
-            // return block
-            return block;
-          }
-
-          // return accumulated
-          return accum;
-        }, {
-          _grid : this.props.page.get('data.add._grid') || {
-            w : 4,
-            h : 2,
-            x : 0,
-            y : 0
-          }
-        });
-
-        // bottom
-        const right = lowestRightest._grid.x + lowestRightest._grid.w;
-        const bottom = lowestRightest._grid.y + lowestRightest._grid.h;
-
         // create block
         let block = {
-          'uuid' : v4(),
-          'type' : type,
-          '_grid' : this.props.page.get('data.add._grid') || {
-            w : 4,
-            h : 2,
-            x : 0,
-            y : 0
+          'uuid'  : v4(),
+          'type'  : type,
+          '_grid' : {
+            w : parseInt(this.$('.grid-stack-item-add').getAttribute('data-gs-width') || 4),
+            h : parseInt(this.$('.grid-stack-item-add').getAttribute('data-gs-height') || 2),
+            x : parseInt(this.$('.grid-stack-item-add').getAttribute('data-gs-x') || 0),
+            y : parseInt(this.$('.grid-stack-item-add').getAttribute('data-gs-y') || 0),
           },
         };
 
         // set new add placement
         this.props.page.set('data.add._grid', {
-          w : 4,
-          h : 2,
-          x : (right >= 12 ? 0 : right),
-          y : (right >= 12 ? bottom : bottom),
+          w : this.props.page.get('data.add._grid.w') || 4,
+          h : this.props.page.get('data.add._grid.h') || 2
         });
-
-        console.log(block);
 
         // check positions
         if (!this.props.page.get('data.blocks')) this.props.page.set('data.blocks', []);
@@ -191,7 +153,7 @@
         this.props.page.get('data.blocks').push(block);
 
         // save placement
-        await this.onSave(block);
+        this.onSave(block);
       }
 
       /**
@@ -229,6 +191,7 @@
         
         // set fields
         await this.props.data('blocks', blocks);
+        this.updateGrid();
       }
 
       /**
@@ -273,7 +236,12 @@
 
         // refs show
         this.refs.config.show();
-        this.refs.config.onRemove(e);
+
+        // on remove
+        setTimeout(() => {
+          // timeout
+          this.refs.config.onRemove(e);
+        }, 50);
       }
 
       /**
@@ -283,14 +251,14 @@
        * @param  {Object} block
        */
       async onConfirmRemove (block) {
+        // hide config
+        if (this.refs.config) this.refs.config.hide();
+
         // get positions
         const blocks = (this.props.page.get('data.blocks') || []).filter((b) => b.uuid !== block.uuid);
 
         // set blocks
         await this.props.data('blocks', blocks);
-        this.update();
-
-        // update grid
         this.updateGrid();
       }
 
@@ -329,11 +297,11 @@
         require('./dashboard/jquery-ui');
         
         // gridstack
-        GridStack.init({
+        this.grid = GridStack.init({
           draggable : {
             handles : '.move',
           }
-        }, this.$('[ref="editable"]')).on('change', (e) => {
+        }, this.$('[ref="editable"]')).on('change', async (e) => {
           // check target
           if (this.$('[ref="editable"]') !== e.target) return true;
 
@@ -350,41 +318,33 @@
             // check block
             if (child.is('.grid-stack-item-add')) {
               // set add grid
-              this.props.data('add', {
+              this.props.page.set('data.add', {
                 _grid : {
-                  x : data.gsX,
-                  y : data.gsY,
-                  h : data.gsHeight,
-                  w : data.gsWidth,
+                  w : parseInt(child.attr('data-gs-width') || 4),
+                  h : parseInt(child.attr('data-gs-height') || 2),
                 }
               });
             } else {
-              // update
-              update = true;
-
               // set grid
               block._grid = {
-                x : data.gsX,
-                y : data.gsY,
-                h : data.gsHeight,
-                w : data.gsWidth,
+                x : parseInt(child.attr('data-gs-x') || 0),
+                y : parseInt(child.attr('data-gs-y') || 0),
+                w : parseInt(child.attr('data-gs-width') || 4),
+                h : parseInt(child.attr('data-gs-height') || 2),
               };
             }
-
-            // save
-            if (update) this.props.data('blocks', this.props.page.get('data.blocks'));
-            this.update();
           });
-        });
 
-        // set grid
-        this.grid = $(this.$('[ref="editable"]')).data('gridstack');
+          // save
+          await this.props.data('blocks', this.props.page.get('data.blocks'));
+        });
       }
 
       /**
        * updates grid
        */
       updateGrid() {
+        console.log(this.grid);
         // check grid
         if (!this.grid || !this.grid.destroy) return;
         
