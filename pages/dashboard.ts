@@ -73,7 +73,7 @@ export default class DashboardPage extends Struct {
    */
   get categories() {
     // return array of categories
-    return ['frontend'];
+    return ['View'];
   }
 
   /**

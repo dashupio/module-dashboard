@@ -263,7 +263,7 @@
        */
       getField() {
         // return value
-        return this.getFields().map((field) => {
+        return [...(this.getFields())].filter((f) => ['number'].includes(f.type)).map((field) => {
           // return fields
           return {
             name     : field.label,
