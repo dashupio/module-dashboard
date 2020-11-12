@@ -42,7 +42,7 @@
       </div>
     </div>
 
-    <dashboard-update ref={ ref('config') } if={ state.block } block={ state.block } get-block={ getBlock } remove-action={ () => onConfirmRemove(state.block) } set={ (k, v) => onSetBlock(state.block, k, v) } { ...getProps() } />
+    <dashboard-update ref={ ref('config') } if={ state.block } block={ state.block } get-block={ getBlock } on-close={ () => onUpdateBlock(e) } remove-action={ () => onConfirmRemove(state.block) } set={ (k, v) => onSetBlock(state.block, k, v) } { ...getProps() } />
     <dashboard-sidebar ref={ ref('sidebar') } blocks={ props.blocks } add-block={ (type) => onAddBlock(type) } />
   </div>
 
@@ -171,11 +171,28 @@
        * on set
        */
       async onSetBlock(block, key, value) {
-        // set
-        if (key) dotProp.set(block, key, value);
-
         // call update
         let blocks = (this.props.page.get('data.blocks') || []);
+
+        // find
+        const found = blocks.find((b) => b.uuid === block.uuid);
+
+        // set
+        if (key) {
+          // check object
+          if (typeof key === 'object') {
+            // check values
+            Object.keys(key).forEach((k) => {
+              // set value
+              dotProp.set(block, k, key[k]);
+              if (found) dotProp.set(found, k, key[k]);
+            });
+          } else {
+            // set value
+            dotProp.set(block, key, value);
+            if (found) dotProp.set(found, key, value);
+          }
+        }
 
         // get saved field
         const savedBlock = await this.props.dashup.action({
@@ -187,6 +204,7 @@
         Object.keys(savedBlock).forEach((key) => {
           // set data
           block[key] = savedBlock[key];
+          if (found) found[key] = savedBlock[key];
         });
         
         // set fields
@@ -213,7 +231,7 @@
         });
 
         // refs show
-        this.refs.config.show();
+        if (this.state.block) this.refs.config.show();
       }
 
       /**

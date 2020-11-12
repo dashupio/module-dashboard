@@ -55,7 +55,7 @@
       <label class="form-label">
         Filter
       </label>
-      <dashup-query fields={ state.fields } on-change={ (val) => onFilter(val) } value={ props.block.filter ? JSON.parse(props.block.filter) : [] } />
+      <dashup-query fields={ getFields() } on-change={ (val) => onFilter(val) } value={ props.block.filter ? JSON.parse(props.block.filter) : [] } />
     </div>
     <!-- / Filter -->
   </div>
