@@ -50,6 +50,18 @@
 
     <hr />
 
+    <div class="mb-3">
+      <label class="form-label">
+        Element Display
+      </label>
+      <code-block ref={ ref('display') } mode="handlebars" content={ props.block.display || '' } prevent-update={ true } on-change={ (e) => onDisplay(e) } />
+      <div class="alert alert-primary mt-2">
+        <hbs template={ props.block.display || '{{value}}' } data={ { value : 10 } } />
+      </div>
+    </div>
+
+    <hr />
+
     <!-- Filter -->
     <div if={ props.block.model } class="mb-3">
       <label class="form-label">
@@ -138,6 +150,14 @@
       onFilter(filter) {
         // set model
         this.props.set('filter', JSON.stringify(filter));
+      }
+
+      /**
+       * on display
+       */
+      onDisplay(value) {
+        // set color
+        this.props.set('display', value);
       }
 
       /**
