@@ -64,6 +64,7 @@ export default class DashboardPage extends Struct {
       dashboard : 'dashboard',
 
       view   : 'page/dashboard/view',
+      menu   : 'page/dashboard/menu',
       config : 'page/dashboard/config',
     };
   }

@@ -1,0 +1,160 @@
+<page-dashboard-menu>
+  <div>
+    <button class={ classes({ 'btn btn-primary ml-2' : true, 'disabled' : props.range === 'day'}) } onclick={ (e) => props.props('range', 'day') }>
+      Day
+    </button>
+    <button class={ classes({ 'btn btn-primary ml-1' : true, 'disabled' : props.range === 'week'}) } onclick={ (e) => props.props('range', 'week') }>
+      Week
+    </button>
+    <button class={ classes({ 'btn btn-primary ml-1' : true, 'disabled' : !props.range || props.range === 'month'}) } onclick={ (e) => props.props('range', 'month') }>
+      Month
+    </button>
+
+    <div class="ml-2 border-left d-inline-block">
+      <button class={ classes({ 'btn btn-primary' : true, 'disabled' : isToday(props.date || new Date()) }) } onclick={ (e) => onToday(e) }>
+        { isToday(props.date || new Date()) ? 'Today' : moment(props.date || new Date()).format('MMMM DD YYYY') }
+      </button>
+
+      <div class="btn-group ml-1">
+        <button class="btn btn-primary" onclick={ (e) => onPrev(e) }>
+          <i class="fa fa-chevron-left" />
+        </button>
+        <button class="btn btn-primary" onclick={ (e) => onNext(e) }>
+          <i class="fa fa-chevron-right" />
+        </button>
+      </div>
+    </div>
+  </div>
+
+  
+  <script>
+    // import moment
+    import moment from 'moment';
+  
+    // export default
+    export default class PageDashboardMenu {
+      
+      /**
+       * on before mount
+       */
+      onBeforeMount() {
+        // get fields
+        this.limits = [20, 40, 60, 80, 100];
+
+        // moment
+        this.moment = moment;
+      }
+
+      /**
+       * on prev
+       */
+      onToday(e) {
+        // prevent
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // set date
+        this.props.props('date', new Date());
+      }
+
+      /**
+       * on prev
+       */
+      onPrev(e) {
+        // prevent
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // check date
+        if (!this.props.range || this.props.range === 'month') {
+          // add one month
+          return this.props.props('date', moment(this.props.date || new Date()).subtract(1, 'month').toDate());
+        }
+        if (this.props.range === 'week') {
+          // add one month
+          return this.props.props('date', moment(this.props.date || new Date()).subtract(1, 'week').toDate());
+        }
+        if (this.props.range === 'day') {
+          // add one month
+          return this.props.props('date', moment(this.props.date || new Date()).subtract(1, 'day').toDate());
+        }
+      }
+
+      /**
+       * on prev
+       */
+      onNext(e) {
+        // prevent
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // check date
+        if (!this.props.range || this.props.range === 'month') {
+          // add one month
+          return this.props.props('date', moment(this.props.date || new Date()).add(1, 'month').toDate());
+        }
+        if (this.props.range === 'week') {
+          // add one month
+          return this.props.props('date', moment(this.props.date || new Date()).add(1, 'week').toDate());
+        }
+        if (this.props.range === 'day') {
+          // add one month
+          this.props.props('date', moment(this.props.date || new Date()).add(1, 'day').toDate());
+        }
+      }
+
+      /**
+       * check is today
+       */
+      isToday(date) {
+        // check day
+        return moment().format('YYYY-MM-DD') === moment(date).format('YYYY-MM-DD');
+      }
+
+
+      // ////////////////////////////////////////////////////////////////////////////
+      //
+      // MISC METHODS
+      //
+      // ////////////////////////////////////////////////////////////////////////////
+
+      /**
+       * ref
+       */
+      ref(name) {
+        // set refs
+        if (!this.refs) this.refs = {};
+
+        // return ref function
+        return (that) => {
+          // set ref
+          this.refs[name] = that;
+        };
+      }
+
+      /**
+       * classes
+       */
+      classes(obj) {
+        // return classes
+        return Object.keys(obj).filter((key) => !!obj[key]).join(' ');
+      }
+
+      /**
+       * set loading
+       */
+      loading(type, way) {
+        // set loading
+        if (!this.__loading) this.__loading = new Map();
+
+        // check loading
+        if (!type) return !!Array.from(this.__loading.values()).find((v) => v);
+        if (typeof way === 'undefined') return !!this.__loading.get(type);
+
+        // set loading
+        this.__loading.set(type, way);
+        this.update();
+      }
+    }
+  </script>
+</page-dashboard-menu>

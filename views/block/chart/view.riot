@@ -2,23 +2,26 @@
   <div class="card flex-1">
     <div if={ props.block.name } class="card-header">
       { props.block.name }
+      <span class="ml-auto">
+        { `${range === 'day' ? '' : `${ucfirst(range || 'month')} of `}${moment(props.date || new Date()).startOf(range || 'month').format('MMM Do')}` }
+      </span>
     </div>
     <div if={ !state.loading } class="card-body d-flex flex-0 align-items-center" if={ state.total || state.total === 0 }>
       <div class="w-100">
-        <div class={ `chart-title text-${props.block.color || 'primary'} text-bold h2 mb-0` }>
-          <hbs template={ props.block.display || '{{value}}' } data={ { value : state.total } } />
+        <div class={ `chart-title text-${props.block.color || 'primary'} text-bold h2 mb-0` } title={ `${range === 'day' ? '' : `${ucfirst(range || 'month')} of `}${moment(props.date || new Date()).startOf(range || 'month').format('MMM Do')}` } data-toggle="tooltip">
+          <hbs template={ props.block.display || '{{value}}' } data={ { value : state.current } } />
         </div>
         <p class="m-0 text-bold">
           <span if={ state.last > state.current }>
             -<hbs template={ props.block.display || '{{value}}' } data={ { value : state.last - state.current } } />
-            { `(-${getDifference(state.last, state.current)}%)` }
+            { ` (-${getDifference(state.last, state.current)}%) ` }
           </span>
           <span if={ state.last < state.current }>
             +<hbs template={ props.block.display || '{{value}}' } data={ { value : state.current - state.last } } />
-            { `(+${getDifference(state.last, state.current)}%)` }
+            { ` (+${getDifference(state.last, state.current)}%) ` }
           </span>
           { state.last === state.current ? `No change` : '' }
-          This Month
+          { ` since previous ${(range || 'month')}` }
         </p>
       </div>
     </div>
@@ -33,6 +36,22 @@
 
     // export default
     export default class BlockChartView {
+      /**
+       * on before mount
+       */
+      onBeforeMount() {
+        // bind methods
+        this.init = this.init.bind(this);
+        this.ucfirst = (str) => {
+          // return
+          return str.charAt(0).toUpperCase() + str.slice(1);
+        };
+        this.moment = moment;
+
+        // bind
+        this.date  = this.props.date || new Date();
+        this.range = this.props.range || 'month';
+      }
 
       /**
        * on mounted
@@ -40,9 +59,6 @@
       onMounted() {
         // check frontend
         if (typeof window === 'undefined') return;
-
-        // bind
-        this.init = this.init.bind(this);
 
         // get chart then update
         this.init();
@@ -60,6 +76,24 @@
 
         // update
         this.props.page.removeListener('do.data.blocks', this.init);
+      }
+
+      /**
+       * on mounted
+       */
+      onUpdated() {
+        // check frontend
+        if (typeof window === 'undefined') return;
+
+        // check date
+        if ((this.props.date && this.props.date !== this.date) || (this.props.range && this.props.range !== this.range)) {
+          // set date
+          this.date  = this.props.date;
+          this.range = this.props.range || 'month';
+
+          // get chart then update
+          this.init();
+        }
       }
 
       /**
@@ -117,6 +151,22 @@
         // return nothing
         if (!this.props.block.model) return;
 
+        // create value
+        const configs = {
+          day : {
+            sub    : 'hour',
+            amount : 24,
+          },
+          week : {
+            sub    : 'day',
+            amount : 14,
+          },
+          month : {
+            sub    : 'day',
+            amount : 31,
+          },
+        };
+
         // get model
         const model = this.props.dashup.page(this.props.block.model);
 
@@ -163,25 +213,44 @@
         if (groupKey) {
           // create data
           const createData = async (fn) => {
+            // get config
+            const subConfig = configs[this.range];
+
+            // create loop array
+            const loopArr = [];
+
+            // set amount
+            if (this.range === 'month') {
+              // set amount
+              subConfig.amount = moment(this.date || new Date()).daysInMonth();
+            }
+
+            // for each
+            for (let i = 0; i < subConfig.amount; i++) {
+              // push
+              loopArr.push(i);
+            }
+
             // create data
             return {
               last : await fn(
                 getQuery()
-                .gt(groupKey, moment().subtract(1, 'months').startOf('month').toDate())
-                .lt(groupKey, moment().startOf('month').toDate())
+                .gt(groupKey, moment(this.date).subtract(1, `${this.range}s`).startOf(this.range).toDate())
+                .lt(groupKey, moment(this.date).startOf(this.range).toDate())
               ),
               total : await fn(getQuery()),
               current : await fn(
                 getQuery()
-                .gt(groupKey, moment().startOf('month').toDate())
+                .gt(groupKey, moment(this.date).startOf(this.range).toDate())
+                .lt(groupKey, moment(this.date).add(1, `${this.range}s`).startOf(this.range).toDate())
               ),
-              chart : await Promise.all([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(async (month) => {
+              chart : await Promise.all(loopArr.map(async (i) => {
                 return {
-                  label  : moment().subtract(month, 'months').startOf('month').toDate(),
+                  label  : moment(this.date).subtract(i, `${subConfig.sub}s`).startOf(subConfig.sub).toDate(),
                   amount : await fn(
                     await getQuery()
-                    .gt(groupKey, moment().subtract(month, 'months').startOf('month').toDate())
-                    .lt(groupKey, moment().subtract((month - 1), 'months').startOf('month').toDate())
+                    .gt(groupKey, moment(this.date).subtract(i, `${subConfig.sub}s`).startOf(subConfig.sub).toDate())
+                    .lt(groupKey, moment(this.date).subtract((i - 1), `${subConfig.sub}s`).startOf(subConfig.sub).toDate())
                   )
                 };
               })),
