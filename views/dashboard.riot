@@ -3,10 +3,12 @@
     <div ref="editable" class="dashup-dashboard grid-stack" if={ state.show }>
 
       <div class="grid-stack-item grid-stack-item-add" data-gs-width={ props.page.get('data.add._grid.w') || '4' } data-gs-height={ props.page.get('data.add._grid.h') || '2' }>
-        <div class="grid-stack-item-content move">
-          <div class="grid-add d-flex align-items-center" onclick={ (e) => onCreateBlock(e) }>
-            <div class="w-100 text-center">
-              Add Widget
+        <div class="grid-stack-item-content">
+          <div class="card move" onmousedown={ (e) => onCreateDown(e) } onmouseup={ (e) => onCreateUp(e) }>
+            <div class="card-body d-flex align-items-center">
+              <div class="w-100 text-center">
+                Add Widget
+              </div>
             </div>
           </div>
         </div>
@@ -15,28 +17,20 @@
       <div each={ (block, i) in props.page.get('data.blocks', []) } class="grid-stack-item" data-gs-x={ block._grid.x || '0' } data-gs-y={ block._grid.y || '0' } data-gs-width={ block._grid.w || 1 } data-gs-height={ block._grid.h || 1 }>
         <div class="grid-stack-item-content">
           <div class="eden-block d-flex flex-1" data-block={ block.uuid } id={ `block-${block.uuid}` }>
-            <div class="eden-block-hover">
-              <div class="row row-eq-height">
-                <div class="col-8 d-flex align-items-center">
-                  <div class="w-100">
-                    <slot name="header" />
-                  </div>
-                </div>
-                <div class="col-4 d-flex align-items-center">
-                  <div class="w-100">
-                    <div class="btn-group float-right">
-                      <button class="btn btn-sm btn-secondary" onclick={ (e) => onUpdateBlock(e, block) }>
-                        <i class="fa fa-pencil-alt" />
-                      </button>
-                      <button class="btn btn-sm btn-secondary" onclick={ (e) => onRemoveBlock(e, block) }>
-                        <i class="fa fa-times" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
+            <div class="eden-block-hover text-right">
+              <div class="btn-group">
+                <button class="btn btn-sm btn-secondary" onclick={ (e) => onUpdateBlock(e, block) }>
+                  <i class="fa fa-pencil-alt" />
+                </button>
+                <span class="move btn btn-sm btn-secondary">
+                  <i class="fa fa-arrows" />
+                </span>
+                <button class="btn btn-sm btn-secondary" onclick={ (e) => onRemoveBlock(e, block) }>
+                  <i class="fa fa-times" />
+                </button>
               </div>
             </div>
-            <div is="dashup-view" type="block" view="view" struct={ block.type } block={ block } remove={ (e) => onRemoveBlock(e, block) } set={ (k, v) => onSetBlock(block, k, v) } { ...getProps() } />
+            <div is="dashup-view" type="block" view="view" struct={ block.type } block={ block } remove={ (e) => onRemoveBlock(e, block) } set={ (k, v, u) => onSetBlock(block, k, v, u) } { ...getProps() } />
           </div>
         </div>
       </div>
@@ -102,6 +96,25 @@
       }
 
       /**
+       * on create down
+       */
+      onCreateDown (e) {
+        // set create
+        this._create = new Date();
+      }
+
+      /**
+       * on create up
+       */
+      onCreateUp (e) {
+        // on create up
+        if (((new Date()).getTime() - this._create.getTime()) < 100) {
+          // on create block
+          this.onCreateBlock(e);
+        }
+      }
+
+      /**
       * on add block
       *
       * @param  {Event} e
@@ -109,10 +122,6 @@
       * @return {*}
       */
       onCreateBlock (e) {
-        // prevent
-        e.preventDefault();
-        e.stopPropagation();
-
         // open modal
         if (this.refs.sidebar) this.refs.sidebar.show();
       }
@@ -170,7 +179,7 @@
       /**
        * on set
        */
-      async onSetBlock(block, key, value) {
+      async onSetBlock(block, key, value, noUpdate = false) {
         // call update
         let blocks = (this.props.page.get('data.blocks') || []);
 
@@ -209,7 +218,7 @@
         
         // set fields
         await this.props.data('blocks', blocks);
-        this.updateGrid();
+        if (!noUpdate) this.updateGrid();
       }
 
       /**
@@ -317,7 +326,8 @@
         // gridstack
         this.grid = GridStack.init({
           draggable : {
-            handles : '.move',
+            delay  : 200,
+            handle : '.move, .card-header',
           }
         }, this.$('[ref="editable"]')).on('change', async (e) => {
           // check target

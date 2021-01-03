@@ -1,6 +1,6 @@
 <block-chart-view>
   <div class="card flex-1">
-    <div if={ props.block.name } class="card-header">
+    <div if={ props.block.name } class="card-header d-flex">
       { props.block.name }
       <span class="ml-auto">
         { `${range === 'day' ? '' : `${ucfirst(range || 'month')} of `}${moment(props.date || new Date()).startOf(range || 'month').format('MMM Do')}` }
@@ -10,6 +10,7 @@
       <div class="w-100">
         <div class={ `chart-title text-${props.block.color || 'primary'} text-bold h2 mb-0` } title={ `${range === 'day' ? '' : `${ucfirst(range || 'month')} of `}${moment(props.date || new Date()).startOf(range || 'month').format('MMM Do')}` } data-toggle="tooltip">
           <hbs template={ props.block.display || '{{value}}' } data={ { value : state.current } } />
+          { ` this ${(range || 'month')}` }
         </div>
         <p class="m-0 text-bold">
           <span if={ state.last > state.current }>
@@ -22,6 +23,7 @@
           </span>
           { state.last === state.current ? `No change` : '' }
           { ` since previous ${(range || 'month')}` }
+          (<hbs template={ props.block.display || '{{value}}' } data={ { value : state.last } } />)
         </p>
       </div>
     </div>
@@ -79,6 +81,26 @@
       }
 
       /**
+       * should update
+       */
+      shouldUpdate(newProps, prevProps) {
+        // check chart
+        if (!this.chart) {
+          // set chart
+          this.chart = this.state.chart;
+
+          // return true
+          return true;
+        }
+        if (newProps.date && this.date !== newProps.date) return true;
+        if (JSON.stringify(this.chart) !== JSON.stringify(this.state.chart)) return true;
+        if (JSON.stringify(newProps.block) !== JSON.stringify(prevProps.block)) return true;
+
+        // return true
+        return false;
+      }
+
+      /**
        * on mounted
        */
       onUpdated() {
@@ -112,6 +134,7 @@
         this.update({
           ...opts,
 
+          chart   : opts,
           loading : false,
         });
       }
