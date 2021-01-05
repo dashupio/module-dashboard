@@ -92,8 +92,8 @@
           // return true
           return true;
         }
-        if (newProps.date && this.date !== newProps.date) return true;
-        if (newProps.range && this.range !== newProps.range) return true;
+        if (prevProps.date !== newProps.date) return true;
+        if (prevProps.range !== newProps.range) return true;
         if (JSON.stringify(this.chart) !== JSON.stringify(this.state.chart)) return true;
         if (JSON.stringify(newProps.block) !== JSON.stringify(prevProps.block)) return true;
 
@@ -132,6 +132,7 @@
         const opts = await this.getChart();
 
         // loading
+        this.chart = null;
         this.update({
           ...opts,
 
