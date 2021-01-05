@@ -10,16 +10,16 @@
       Month
     </button>
 
-    <div class="ml-2 border-left d-inline-block">
-      <button class={ classes({ 'btn btn-primary' : true, 'disabled' : isToday(props.date || new Date()) }) } onclick={ (e) => onToday(e) }>
+    <div class="ml-2 border-left d-inline-block mr-2">
+      <button class={ classes({ 'btn btn-primary' : true, 'disabled' : isToday(props.date || new Date()) }) } onclick={ (e) => onToday(e) } data-toggle="tooltip" title="Reset">
         { isToday(props.date || new Date()) ? 'Today' : moment(props.date || new Date()).format('MMMM DD YYYY') }
       </button>
 
       <div class="btn-group ml-1">
-        <button class="btn btn-primary" onclick={ (e) => onPrev(e) }>
+        <button class="btn btn-primary" onclick={ (e) => onPrev(e) } data-toggle="tooltip" title="Previous">
           <i class="fa fa-chevron-left" />
         </button>
-        <button class="btn btn-primary" onclick={ (e) => onNext(e) }>
+        <button class="btn btn-primary" onclick={ (e) => onNext(e) } data-toggle="tooltip" title="Next">
           <i class="fa fa-chevron-right" />
         </button>
       </div>

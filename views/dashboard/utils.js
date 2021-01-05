@@ -118,7 +118,7 @@ class Utils {
         return Boolean(v);
     }
     static toNumber(value) {
-        return (value === null || value.length === 0) ? null : Number(value);
+        return (value === null || `${value}`.length === 0) ? null : Number(value);
     }
     static parseHeight(val) {
         let height;
