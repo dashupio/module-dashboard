@@ -109,7 +109,10 @@
         if (!type) type = this.refs.sidebar.type;
 
         // add widget
-        this.grid.addWidget('<div ref="added"><div class="grid-stack-item-content"> test </div></div>', {width: 4, height: 2});
+        this.grid.addWidget('<div ref="added"><div class="grid-stack-item-content"> test </div></div>', {
+          width  : 4,
+          height : 2
+        });
 
         // get added
         const added = $(this.$('[ref="added"]'));
