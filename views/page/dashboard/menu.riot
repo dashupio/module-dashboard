@@ -24,6 +24,11 @@
         </button>
       </div>
     </div>
+
+    <button class="btn btn-dark mr-2" onclick={ (e) => onCreate(e) }>
+      <i class="fa fa-plus mr-2" />
+      Block
+    </button>
   </div>
 
   
@@ -43,6 +48,9 @@
 
         // moment
         this.moment = moment;
+
+        // on create
+        this.onCreate = this.onCreate.bind(this);
       }
 
       /**
@@ -55,6 +63,14 @@
         
         // set date
         this.props.props('date', new Date());
+      }
+      
+      /**
+       * on create
+       */
+      onCreate(e) {
+        // create
+        this.props.page.emit('create', true);
       }
 
       /**

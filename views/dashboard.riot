@@ -1,19 +1,6 @@
 <dashboard>
   <div>
     <div ref="editable" class="dashup-dashboard grid-stack" if={ state.show }>
-
-      <div class="grid-stack-item grid-stack-item-add" data-gs-width={ props.page.get('data.add._grid.w') || '4' } data-gs-height={ props.page.get('data.add._grid.h') || '2' }>
-        <div class="grid-stack-item-content">
-          <div class="card move" onmousedown={ (e) => onCreateDown(e) } onmouseup={ (e) => onCreateUp(e) }>
-            <div class="card-body d-flex align-items-center">
-              <div class="w-100 text-center">
-                Add Widget
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div each={ (block, i) in props.page.get('data.blocks', []) } class="grid-stack-item" data-gs-x={ block._grid.x || '0' } data-gs-y={ block._grid.y || '0' } data-gs-width={ block._grid.w || 1 } data-gs-height={ block._grid.h || 1 }>
         <div class="grid-stack-item-content">
           <div class="eden-block d-flex flex-1" data-block={ block.uuid } id={ `block-${block.uuid}` }>
@@ -56,8 +43,8 @@
       onBeforeMount(props) {
         // bind methods
         this.getBlock = this.getBlock.bind(this);
+        this.onCreate = this.onCreate.bind(this);
         this.onSetBlock = this.onSetBlock.bind(this);
-        this.onCreateBlock = this.onCreateBlock.bind(this);
         this.onUpdateBlock = this.onUpdateBlock.bind(this);
         this.onRemoveBlock = this.onRemoveBlock.bind(this);
 
@@ -76,6 +63,9 @@
 
         // init dragula
         if (!this.grid) this.initGrid();
+
+        // on page
+        this.props.page.on('create', this.onCreate);
       }
       
       /**
@@ -96,32 +86,13 @@
       }
 
       /**
-       * on create down
-       */
-      onCreateDown (e) {
-        // set create
-        this._create = new Date();
-      }
-
-      /**
-       * on create up
-       */
-      onCreateUp (e) {
-        // on create up
-        if (((new Date()).getTime() - this._create.getTime()) < 100) {
-          // on create block
-          this.onCreateBlock(e);
-        }
-      }
-
-      /**
       * on add block
       *
       * @param  {Event} e
       *
       * @return {*}
       */
-      onCreateBlock (e) {
+      onCreate (e) {
         // open modal
         if (this.refs.sidebar) this.refs.sidebar.show();
       }
@@ -137,23 +108,26 @@
         // set type
         if (!type) type = this.refs.sidebar.type;
 
+        // add widget
+        this.grid.addWidget('<div ref="added"><div class="grid-stack-item-content"> test </div></div>', {width: 4, height: 2});
+
+        // get added
+        const added = $(this.$('[ref="added"]'));
+
         // create block
         let block = {
           'uuid'  : v4(),
           'type'  : type,
           '_grid' : {
-            w : parseInt(this.$('.grid-stack-item-add').getAttribute('data-gs-width') || 4),
-            h : parseInt(this.$('.grid-stack-item-add').getAttribute('data-gs-height') || 2),
-            x : parseInt(this.$('.grid-stack-item-add').getAttribute('data-gs-x') || 0),
-            y : parseInt(this.$('.grid-stack-item-add').getAttribute('data-gs-y') || 0),
+            w : 4,
+            h : 2,
+            x : added ? added.attr('data-gs-x') : 0,
+            y : added ? added.attr('data-gs-y') : 0,
           },
         };
 
-        // set new add placement
-        this.props.page.set('data.add._grid', {
-          w : this.props.page.get('data.add._grid.w') || 4,
-          h : this.props.page.get('data.add._grid.h') || 2
-        });
+        // remove
+        added.remove();
 
         // check positions
         if (!this.props.page.get('data.blocks')) this.props.page.set('data.blocks', []);
