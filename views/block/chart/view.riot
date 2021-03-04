@@ -28,7 +28,7 @@
       </div>
     </div>
     <div if={ !state.loading } class={ `card-body d-flex flex-column chart-${props.block.color || 'primary'}` }>
-      <dashup-view if={ state.chart } dashup={ props.dashup } type="block" struct="chart" view="chart" class="d-flex flex-1" view-class="d-flex flex-1" options={ state.chart } />
+      <dashup-view if={ state.chart } dashup={ props.dashup } type="block" struct="chart" view="chart" class="d-flex flex-1" view-class="d-flex flex-1" chart={ state.chart } />
     </div>
   </div>
 
@@ -136,7 +136,6 @@
         this.update({
           ...opts,
 
-          chart   : opts,
           loading : false,
         });
       }
@@ -234,6 +233,8 @@
           groupKey = 'updated_at';
         }
 
+        if (metric === 'avg') console.log(data, 'TESTTTT', field.name || field.uuid);
+
         // check grouping
         if (groupKey) {
           // create data
@@ -302,10 +303,7 @@
             // set data
             data = await createData(async (q) => {
               // return counted
-              return (
-                (await q.gt(field.name || field.uuid, 0).sum(field.name || field.uuid) || 0) /
-                await q.gt(field.name || field.uuid, 0).count()
-              ) || 0;
+              return await q.gt(field.name || field.uuid, 0).avg(field.name || field.uuid) || 0;
             });
           } else if (metric === 'min') {
             // set data
@@ -327,6 +325,8 @@
             });
           }
         }
+
+        if (metric === 'avg') console.log(data, 'TESTTTT');
 
         // check data
         if (!data) return {};

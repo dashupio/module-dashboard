@@ -31,7 +31,7 @@
         // timeout
         setTimeout(() => {
           // check frontend
-          const opts = this.props.options || this.props.chart;
+          const opts = this.props.chart;
 
           // check
           if (typeof window === 'undefined' || !this.$('.chart') || !opts) return;
