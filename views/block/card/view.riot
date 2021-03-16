@@ -1,0 +1,37 @@
+<block-card-view>
+  <div class="card h-100">
+    <div if={ props.block.name } class="card-header">
+      { props.block.name }
+    </div>
+    <div class="card-body">
+      <hbs template={ props.block.display || '' } data={ props.context } />
+    </div>
+  </div>
+
+  <script>
+    // export default
+    export default class BlockCardView {
+
+
+      // ////////////////////////////////////////////////////////////////////////////
+      //
+      // MISC METHODS
+      //
+      // ////////////////////////////////////////////////////////////////////////////
+
+      /**
+       * ref
+       */
+      ref(name) {
+        // set refs
+        if (!this.refs) this.refs = {};
+
+        // return ref function
+        return (that) => {
+          // set ref
+          this.refs[name] = that;
+        };
+      }
+    }
+  </script>
+</block-card-view>
