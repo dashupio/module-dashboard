@@ -1,5 +1,5 @@
 <page-dashboard-view>
-  <dashup-view view="dashboard" type="page" struct="dashboard" blocks={ getBlocks() } { ...getProps() } />
+  <dashup-view preview={ !props.altering } view="dashboard" type="page" struct="dashboard" blocks={ getBlocks() } { ...getProps() } />
 
   <script>
 

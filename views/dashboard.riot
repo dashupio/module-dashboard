@@ -4,7 +4,7 @@
       <div each={ (block, i) in props.page.get('data.blocks', []) } class="grid-stack-item" data-gs-x={ block._grid.x || '0' } data-gs-y={ block._grid.y || '0' } data-gs-width={ block._grid.w || 1 } data-gs-height={ block._grid.h || 1 }>
         <div class="grid-stack-item-content">
           <div class="eden-block d-flex w-100 h-100" data-block={ block.uuid } id={ `block-${block.uuid}` }>
-            <div class="eden-block-hover text-right">
+            <div if={ !props.preview } class="eden-block-hover text-right">
               <div class="btn-group">
                 <button class="btn btn-sm btn-secondary" onclick={ (e) => onUpdateBlock(e, block) }>
                   <i class="fa fa-pencil-alt" />

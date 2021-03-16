@@ -1,16 +1,16 @@
 <page-dashboard-menu>
   <div>
-    <button class={ classes({ 'btn btn-primary ml-2' : true, 'disabled' : props.range === 'day'}) } onclick={ (e) => props.props('range', 'day') }>
+    <button if={ !props.altering } class={ classes({ 'btn btn-primary ml-2' : true, 'disabled' : props.range === 'day'}) } onclick={ (e) => props.props('range', 'day') }>
       Day
     </button>
-    <button class={ classes({ 'btn btn-primary ml-1' : true, 'disabled' : props.range === 'week'}) } onclick={ (e) => props.props('range', 'week') }>
+    <button if={ !props.altering } class={ classes({ 'btn btn-primary ml-1' : true, 'disabled' : props.range === 'week'}) } onclick={ (e) => props.props('range', 'week') }>
       Week
     </button>
-    <button class={ classes({ 'btn btn-primary ml-1' : true, 'disabled' : !props.range || props.range === 'month'}) } onclick={ (e) => props.props('range', 'month') }>
+    <button if={ !props.altering } class={ classes({ 'btn btn-primary ml-1' : true, 'disabled' : !props.range || props.range === 'month'}) } onclick={ (e) => props.props('range', 'month') }>
       Month
     </button>
 
-    <div class="ml-2 border-left d-inline-block mr-2">
+    <div if={ !props.altering } class="ml-2 border-left d-inline-block mr-2">
       <button class={ classes({ 'btn btn-primary' : true, 'disabled' : isToday(props.date || new Date()) }) } onclick={ (e) => onToday(e) } data-toggle="tooltip" title="Reset">
         { isToday(props.date || new Date()) ? 'Today' : moment(props.date || new Date()).format('MMMM DD YYYY') }
       </button>
@@ -24,10 +24,18 @@
         </button>
       </div>
     </div>
-
-    <button class="btn btn-dark mr-2" onclick={ (e) => onCreate(e) }>
+    <button if={ !props.altering } class="mr-2 btn btn-link text-dark" onclick={ (e) => onAlter(e) }>
+      <i class="fat fa-pencil mr-2" />
+      Alter Display
+    </button>
+    
+    <button if={ props.altering } class="btn btn-dark mr-2" onclick={ (e) => onCreate(e) }>
       <i class="fa fa-plus mr-2" />
       Block
+    </button>
+    <button if={ props.altering } class="mr-2 btn btn-primary" onclick={ (e) => onAlter(e) }>
+      <i class="fat fa-check mr-2"></i>
+      Finish Altering
     </button>
   </div>
 
@@ -71,6 +79,18 @@
       onCreate(e) {
         // create
         this.props.page.emit('create', true);
+      }
+
+      /**
+       * on alter
+       */
+      onAlter(e) {
+        // prevent default
+        e.preventDefault();
+        e.stopPropagation();
+
+        // props
+        this.props.props('altering', !this.props.altering);
       }
 
       /**
