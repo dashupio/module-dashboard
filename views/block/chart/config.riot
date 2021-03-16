@@ -283,7 +283,7 @@
        */
       getField() {
         // return value
-        return [...(this.getFields())].filter((f) => ['number', 'money'].includes(f.type)).map((field) => {
+        return [...(this.getFields())].filter((f) => ['number', 'money', 'date'].includes(f.type)).map((field) => {
           // return fields
           return {
             name     : field.label,

@@ -204,6 +204,9 @@
         // get field
         const field = this.props.block.field ? this.getFields().find((f) => f.uuid === this.props.block.field) : null;
 
+        // key
+        const fieldKey = field ? (field.type === 'date' ? `${(field.name || field.uuid)}.duration` : (field.name || field.uuid)) : null;
+
         // set type
         let data = null;
 
@@ -232,8 +235,6 @@
           // updated
           groupKey = 'updated_at';
         }
-
-        if (metric === 'avg') console.log(data, 'TESTTTT', field.name || field.uuid);
 
         // check grouping
         if (groupKey) {
@@ -297,34 +298,39 @@
             // set data
             data = await createData(async (q) => {
               // return counted
-              return q.gt(field.name || field.uuid, 0).sum(field.name || field.uuid) || 0;
+              return q.gt(fieldKey, 0).sum(fieldKey) || 0;
             });
           } else if (metric === 'avg') {
             // set data
             data = await createData(async (q) => {
               // return counted
-              return await q.gt(field.name || field.uuid, 0).avg(field.name || field.uuid) || 0;
+              return await q.gt(fieldKey, 0).avg(fieldKey) || 0;
             });
           } else if (metric === 'min') {
             // set data
             data = await createData(async (q) => {
               // get value
-              const value = await q.gt(field.name || field.uuid, 0).sort(field.name || field.uuid, 1).findOne();
+              const value = await q.gt(fieldKey, 0).sort(fieldKey, 1).findOne();
 
               // return counted
-              return value ? value.get(field.name || field.uuid) : 0;
+              return value ? value.get(fieldKey) : 0;
             });
           } else if (metric === 'max') {
             // set data
             data = await createData(async (q) => {
               // get value
-              const value = await q.gt(field.name || field.uuid, 0).sort(field.name || field.uuid, -1).findOne();
+              const value = await q.gt(fieldKey, 0).sort(fieldKey, -1).findOne();
 
               // return counted
-              return value ? value.get(field.name || field.uuid) : 0;
+              return value ? value.get(fieldKey) : 0;
             });
           }
         }
+
+        // fix nullified values
+        if (data.last === null) data.last = 0;
+        if (data.total === null) data.total = 0;
+        if (data.current === null) data.current = 0;
 
         // check data
         if (!data) return {};
@@ -336,7 +342,7 @@
           chart : {
             series : [{
               name : model.get('name'),
-              data : data.chart.map((item) => item.amount),
+              data : data.chart.map((item) => item.amount || 0),
             }],
             chart : {
               type      : 'area',

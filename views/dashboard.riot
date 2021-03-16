@@ -3,7 +3,7 @@
     <div ref="editable" class="dashup-dashboard grid-stack" if={ state.show }>
       <div each={ (block, i) in props.page.get('data.blocks', []) } class="grid-stack-item" data-gs-x={ block._grid.x || '0' } data-gs-y={ block._grid.y || '0' } data-gs-width={ block._grid.w || 1 } data-gs-height={ block._grid.h || 1 }>
         <div class="grid-stack-item-content">
-          <div class="eden-block d-flex flex-1" data-block={ block.uuid } id={ `block-${block.uuid}` }>
+          <div class="eden-block d-flex w-100 h-100" data-block={ block.uuid } id={ `block-${block.uuid}` }>
             <div class="eden-block-hover text-right">
               <div class="btn-group">
                 <button class="btn btn-sm btn-secondary" onclick={ (e) => onUpdateBlock(e, block) }>
@@ -17,7 +17,7 @@
                 </button>
               </div>
             </div>
-            <div is="dashup-view" type="block" view="view" struct={ block.type } block={ block } remove={ (e) => onRemoveBlock(e, block) } set={ (k, v, u) => onSetBlock(block, k, v, u) } { ...getProps() } />
+            <div is="dashup-view" class="w-100 h-100" type="block" view="view" struct={ block.type } block={ block } remove={ (e) => onRemoveBlock(e, block) } set={ (k, v, u) => onSetBlock(block, k, v, u) } { ...getProps() } />
           </div>
         </div>
       </div>
@@ -79,7 +79,9 @@
         delete props.set;
         delete props.view;
         delete props.type;
+        delete props.class;
         delete props.struct;
+        delete props.viewClass;
 
         // return props
         return props;
