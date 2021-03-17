@@ -6,15 +6,24 @@
       </label>
       <input name="name" class="form-control" type="text" value={ props.block.name || '' } onchange={ (e) => onName(e) } />
     </div>
-    <div class="mb-3">
+
+    <hr />
+    
+    <div each={ (tab, i) in props.block.tabs } class="mb-3">
       <label class="form-label">
-        Card Display
+        Tab #{ i + 1 }
       </label>
-      <code-block ref={ ref('display') } mode="handlebars" content={ props.block.display || '' } prevent-update={ true } on-change={ (e) => onDisplay(e) } />
-      <div class="alert alert-primary mt-2">
-        <hbs template={ props.block.display || '' } data={ props.context } />
+      <div class="d-flex mb-2">
+        <input type="text" name="tab[{ i }]" value={ tab.title } class="form-control flex-1" onchange={ (e) => onTabTitle(e, tab) } />
+        <button class="btn btn-danger ml-2" onclick={ (e) => onRemoveTab(e, i) }>
+          <i class="fa fa-times" />
+        </button>
       </div>
+      <code-block mode="handlebars" content={ tab.display || '' } prevent-update={ true } on-change={ (e) => onTabDisplay(e, tab) } />
     </div>
+    <button class="btn btn-success mr-3" onclick={ (e) => onTab(e) }>
+      Add Tab
+    </button>
   </div>
 
   <script>
@@ -35,6 +44,10 @@
       onBeforeMount() {
         // bind
         this.onName = this.onName.bind(this);
+        this.onTabDisplay = this.onTabDisplay.bind(this);
+
+        // check tabs
+        if (!this.props.block.tabs) this.props.block.tabs = [{ title : 'Default' }];
       }
       
 
@@ -58,11 +71,64 @@
       }
 
       /**
+      * on option
+      *
+      * @param {Event} e
+      */
+      onTab(e) {
+        // prevent default
+        e.preventDefault();
+        e.stopPropagation();
+
+        // add option
+        this.props.block.tabs.push({
+          title   : '',
+          display : '',
+        });
+
+        // run opts
+        this.props.set('tabs', this.props.block.tabs);
+      }
+
+      /**
+      * on option name
+      *
+      * @param {Event} e
+      */
+      onTabTitle(e, tab) {
+        // set value
+        tab.title = e.target.value;
+
+        // run opts
+        this.props.set('tabs', this.props.block.tabs);
+      }
+
+      /**
+      * on option
+      *
+      * @param {Event} e
+      */
+      onRemoveOption(e, i) {
+        // prevent default
+        e.preventDefault();
+        e.stopPropagation();
+
+        // remove option
+        this.props.block.tabs.splice(i, 1);
+
+        // run opts
+        this.props.set('tabs', this.props.block.tabs);
+      }
+
+      /**
        * on display
        */
-      onDisplay(value) {
+      onTabDisplay(value, tab) {
+        // set display
+        tab.display = value;
+        
         // set color
-        this.props.set('display', value);
+        this.props.set('tabs', this.props.block.tabs);
       }
 
       // ////////////////////////////////////////////////////////////////////////////

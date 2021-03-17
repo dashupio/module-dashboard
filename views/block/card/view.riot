@@ -3,8 +3,17 @@
     <div if={ props.block.name } class="card-header">
       { props.block.name }
     </div>
+    <div if={ getTabs().length > 1 } class="card-header">
+      <ul class="nav nav-tabs">
+        <li each={ (tab, i) in getTabs() } class="nav-item">
+          <a class={ `nav-link${state.tab === i ? ' active' : ''}` } href="#" onclick={ (e) => onTab(e, i) }>
+            { tab.title }
+          </a>
+        </li>
+      </ul>
+    </div>
     <div class="card-body">
-      <hbs template={ props.block.display || '' } data={ props.context } />
+      <hbs if={ getTabs().length } template={ getTabs()[state.tab].display || '' } data={ props.context } />
     </div>
   </div>
 
@@ -12,25 +21,37 @@
     // export default
     export default class BlockCardView {
 
+      /**
+       * on before mount
+       */
+      onBeforeMount() {
+        // tab
+        this.state.tab = 0;
 
-      // ////////////////////////////////////////////////////////////////////////////
-      //
-      // MISC METHODS
-      //
-      // ////////////////////////////////////////////////////////////////////////////
+        // bind tabs
+        this.onTab = this.onTab.bind(this);
+      }
 
       /**
-       * ref
+       * on tab
        */
-      ref(name) {
-        // set refs
-        if (!this.refs) this.refs = {};
+      onTab(e, tab) {
+        // prevent default
+        e.preventDefault();
+        e.stopPropagation();
 
-        // return ref function
-        return (that) => {
-          // set ref
-          this.refs[name] = that;
-        };
+        // update
+        this.update({
+          tab,
+        });
+      }
+
+      /**
+       * get tabs
+       */
+      getTabs() {
+        // return tabs
+        return (this.props.block.tabs || []);
       }
     }
   </script>

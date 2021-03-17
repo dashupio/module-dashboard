@@ -162,6 +162,9 @@
         // call update
         let blocks = (this.props.page.get('data.blocks') || []);
 
+        // check block
+        if (!block) return;
+
         // find
         const found = blocks.find((b) => b.uuid === block.uuid);
 
