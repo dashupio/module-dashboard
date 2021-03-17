@@ -8,6 +8,17 @@
     </div>
 
     <hr />
+      
+    <div class="mb-3">
+      <div class="form-check form-switch">
+        <input class="form-check-input" id="is-required" type="checkbox" onchange={ (e) => onBackground(e) } { ...getProps({ checked : !props.block.background }) }>
+        <label class="form-check-label" for="is-required">
+          Enable Background
+        </label>
+      </div>
+    </div>
+
+    <hr />
     
     <div each={ (tab, i) in props.block.tabs } class="mb-3">
       <label class="form-label">
@@ -48,6 +59,20 @@
 
         // check tabs
         if (!this.props.block.tabs) this.props.block.tabs = [{ title : 'Default' }];
+      }
+
+      /**
+       * get props
+       */
+      getProps(obj) {
+        // return get props
+        return Object.keys(obj).reduce((accum, key) => {
+          // set accum
+          if (obj[key]) accum[key] = true;
+
+          // return accum
+          return accum;
+        }, {});
       }
       
 
@@ -129,6 +154,20 @@
         
         // set color
         this.props.set('tabs', this.props.block.tabs);
+      }
+
+      /**
+       * on model
+       */
+      onBackground (e) {
+        // get value
+        const val = $(e.target).is(':checked');
+
+        // get backlog
+        const background = !val;
+        
+        // set model
+        this.props.set('background', background);
       }
 
       // ////////////////////////////////////////////////////////////////////////////

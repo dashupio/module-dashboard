@@ -1,10 +1,10 @@
 <block-card-view>
-  <div class="card h-100">
-    <div if={ props.block.name } class="card-header">
-      { props.block.name }
+  <div class={ `flex-1 d-flex flex-column h-100 w-100${props.block.background ? '' : ' card'}` }>
+    <div if={ props.block.name } class={ props.block.background ? ' mb-2' : 'card-header' }>
+      <b>{ props.block.name }</b>
     </div>
-    <div if={ getTabs().length > 1 } class="card-header">
-      <ul class="nav nav-tabs">
+    <div if={ getTabs().length > 1 } class={ props.block.background ? 'd-flex' : 'card-header' }>
+      <ul class="nav nav-tabs w-100">
         <li each={ (tab, i) in getTabs() } class="nav-item">
           <a class={ `nav-link${state.tab === i ? ' active' : ''}` } href="#" onclick={ (e) => onTab(e, i) }>
             { tab.title }
@@ -12,12 +12,15 @@
         </li>
       </ul>
     </div>
-    <div class="card-body">
+    <div class={ `flex-column oy-scroll ${props.block.background ? ' flex-1' : ' card-body'}` }>
       <hbs if={ getTabs().length } template={ getTabs()[state.tab].display || '' } data={ props.context } />
     </div>
   </div>
 
   <script>
+    // import perfect scrollbar
+    import PerfectScrollbar from 'perfect-scrollbar';
+
     // export default
     export default class BlockCardView {
 
@@ -30,6 +33,22 @@
 
         // bind tabs
         this.onTab = this.onTab.bind(this);
+      }
+
+      /**
+       * on mounted
+       */
+      onMounted() {
+        // check frontend
+        if (typeof window === 'undefined') return;
+        
+        // fix column sizing
+        if (this.$('.oy-scroll') && !this.$('.oy-scroll.ps')) {
+          // ps
+          this.ps = new PerfectScrollbar(this.$('.oy-scroll'), {
+            suppressScrollX : true,
+          });
+        }
       }
 
       /**
