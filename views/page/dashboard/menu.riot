@@ -1,5 +1,6 @@
 <page-dashboard-menu>
   <div>
+    <eden-select if={ !props.altering && props.page.get('data.form') } ref={ ref('select') } type="button" button="white" load={ loadData } placeholder="Select Context" data={ getData() } on-change={ (e, id, item) => onChange(id, item) } class="d-inline-flex" />
     <button if={ !props.altering } class={ classes({ 'btn btn-primary ml-2' : true, 'disabled' : props.range === 'day'}) } onclick={ (e) => props.props('range', 'day') }>
       Day
     </button>
@@ -59,6 +60,7 @@
 
         // on create
         this.onCreate = this.onCreate.bind(this);
+        this.loadData = this.loadData.bind(this);
       }
 
       /**
@@ -145,6 +147,101 @@
       isToday(date) {
         // check day
         return moment().format('YYYY-MM-DD') === moment(date).format('YYYY-MM-DD');
+      }
+
+      /**
+       * on change
+       */
+      onChange(id, item) {
+        console.log('item', item);
+        // current
+        this.props.onItem(null, item, false);
+      }
+
+      /**
+       * load from api
+       */
+      async loadData(search) {
+        // get values
+        const by    = this.props.page.get('data.by');
+        const model = this.props.page.get('data.model');
+
+        // get model
+        const modelPage = this.props.dashup.page(model);
+
+        // by field
+        const byField = by && this.getFields().find((f) => f.uuid === by);
+
+        // check by field
+        if (!byField) return [];
+
+        // check query
+        const query = this.props.page.get('data.filter') ? JSON.parse(this.props.page.get('data.filter')) : [];
+
+        // create where
+        let data = modelPage;
+
+        // loop query
+        query.forEach((item) => {
+          // add where
+          data = data.where(item);
+        });
+
+        // inc
+        if (search && search.length) {
+          // inc
+          data = data.inc(byField.name || byField.uuid, search);
+        }
+
+        // add limit
+        this.result = await data.limit(25).find();
+
+        // return map
+        return this.result.map((item) => {
+          // return value
+          return {
+            name  : item.get(byField.name || byField.uuid),
+            data  : item,
+            value : item.get('_id'),
+          };
+        });
+      }
+
+      /**
+       * get value
+       */
+      getData() {
+        // by
+        const by = this.props.page.get('data.by');
+
+        // by field
+        const byField = by && this.getFields().find((f) => f.uuid === by);
+
+        // return
+        if (!byField) return [];
+        
+        // return value
+        return this.props.current ? [this.props.current].map((item) => {
+          // return value
+          return {
+            name     : item.get ? item.get(byField.name || byField.uuid) : item[byField.name || byField.uuid],
+            data     : item,
+            value    : item.get ? item.get('_id') : item._id,
+            selected : true,
+          };
+        }) : [];
+      }
+
+      /**
+       * get fields
+       */
+      getFields() {
+        // get values
+        const model = this.props.page.get('data.model');
+        const forms = Array.from(this.props.dashup.get('pages').values()).filter((p) => p.get('type') === 'form' && p.get('data.model') === model);
+
+        // return fields
+        return [].concat(...(forms.map((f) => (f.get('data.fields') || []))));
       }
 
 

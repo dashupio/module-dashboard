@@ -35,9 +35,11 @@
   <script>
     // import moment
     import moment from 'moment';
+    import handlebars from 'handlebars';
 
     // export default
     export default class BlockChartView {
+      
       /**
        * on before mount
        */
@@ -49,6 +51,7 @@
           return str.charAt(0).toUpperCase() + str.slice(1);
         };
         this.moment = moment;
+        this.context = JSON.stringify(this.props.context);
 
         // bind
         this.date  = this.props.date || new Date();
@@ -84,17 +87,42 @@
        * should update
        */
       shouldUpdate(newProps, prevProps) {
+        // current
+        const context = JSON.stringify(newProps.context);
+        
+        // check current
+        if (context !== this.context) {
+          // context
+          this.context = JSON.stringify(newProps.context);
+
+          // init again
+          this.init();
+
+          // get chart then update
+          return true;
+        }
+
         // check chart
-        if (!this.chart) {
+        if (JSON.stringify(this.chart) !== JSON.stringify(this.state.chart)) {
           // set chart
           this.chart = this.state.chart;
 
           // return true
           return true;
         }
+
+        // check loading
+        if (this.state.loading !== this.loading) {
+          // set loading
+          this.loading = this.state.loading;
+
+          // return true
+          return true;
+        }
+
+        // check props
         if (prevProps.date !== newProps.date) return true;
         if (prevProps.range !== newProps.range) return true;
-        if (JSON.stringify(this.chart) !== JSON.stringify(this.state.chart)) return true;
         if (JSON.stringify(newProps.block) !== JSON.stringify(prevProps.block)) return true;
 
         // return true
@@ -123,6 +151,9 @@
        * init
        */
       async init() {
+        // check loading
+        if (this.state.loading) return;
+
         // loading
         this.update({
           loading : true,
@@ -166,6 +197,38 @@
           // return accum
           return accum;
         }, []);
+      }
+
+      /**
+       * fix context
+       */
+      fixContext(where) {
+        // tempates
+        if (!this.__templates) this.__templates = {};
+
+        // iterate object
+        const iter = (obj) => {
+          // check keys
+          Object.keys(obj).forEach((key) => {
+            // iterate sub
+            if (typeof obj[key] === 'object') return obj[key] = iter(obj[key]);
+
+            // check string
+            if (typeof obj[key] === 'string' && obj[key].includes('{{')) {
+              // log context
+              if (!this.__templates[obj[key]]) this.__templates[obj[key]] = handlebars.compile(obj[key]);
+
+              // key
+              obj[key] = this.__templates[obj[key]](this.props.context);
+            }
+          });
+
+          // return fixed
+          return obj;
+        };
+
+        // iterate object
+        return iter(where);
       }
 
       /**
@@ -217,7 +280,7 @@
 
           // check filters
           filter.forEach((where) => {
-            query = query.where(where);
+            query = query.where(this.fixContext(where));
           });
 
           // return query

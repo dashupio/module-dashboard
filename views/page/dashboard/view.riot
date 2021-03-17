@@ -7,6 +7,37 @@
     export default class PageDashboardView {
 
       /**
+       * on before mount
+       */
+      onBeforeMount(...args) {
+        // check frontend
+        if (typeof window === 'undefined') return;
+
+        // set current
+        this.current = this.props.current || new this.props.dashup.Model();
+      }
+
+      /**
+       * on mounted
+       */
+      onBeforeUpdate() {
+        // check frontend
+        if (typeof window === 'undefined') return;
+
+        // current
+        const current = this.props.item || this.props.current;
+        
+        // check current
+        if (current && this.current.get('_id') !== current.get('_id')) {
+          // set item
+          this.current = current;
+        } else if (!current && this.current.get('_id')) {
+          // set current
+          this.current = current || new this.props.dashup.Model();
+        }
+      }
+
+      /**
        * gets blocks
        */
       getBlocks() {
@@ -28,6 +59,21 @@
         delete newProps.class;
         delete newProps.blocks;
         delete newProps.struct;
+        delete newProps.context;
+
+        // set item
+        newProps.item = this.current;
+
+        // set context
+        const context = { ...(this.props.context || {}) };
+
+        // add to context
+        context.item = this.current ? this.current.toJSON() : null;
+
+        // model/forms
+        newProps.model = this.props.page.get('data.model');
+        newProps.forms = this.props.page.get('data.forms') || [];
+        newProps.context = context;
 
         // return
         return newProps;
