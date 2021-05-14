@@ -1,15 +1,7 @@
 <page-dashboard-menu>
   <div>
     <eden-select if={ !props.altering && props.page.get('data.form') } ref={ ref('select') } type="button" button="white" load={ loadData } placeholder="Select Context" data={ getData() } on-change={ (e, id, item) => onChange(id, item) } class="d-inline-flex" />
-    <button if={ !props.altering } class={ classes({ 'btn btn-primary ml-2' : true, 'disabled' : props.range === 'day'}) } onclick={ (e) => props.props('range', 'day') }>
-      Day
-    </button>
-    <button if={ !props.altering } class={ classes({ 'btn btn-primary ml-1' : true, 'disabled' : props.range === 'week'}) } onclick={ (e) => props.props('range', 'week') }>
-      Week
-    </button>
-    <button if={ !props.altering } class={ classes({ 'btn btn-primary ml-1' : true, 'disabled' : !props.range || props.range === 'month'}) } onclick={ (e) => props.props('range', 'month') }>
-      Month
-    </button>
+    <eden-select if={ !props.altering } ref={ ref('type') } type="button" button="white" placeholder="Select Range" data={ getRange() } on-change={ (e, id, item) => props.props('range', id) } class="d-inline-flex ml-2" />
 
     <div if={ !props.altering } class="ml-2 border-left d-inline-block mr-2">
       <button class={ classes({ 'btn btn-primary' : true, 'disabled' : isToday(props.date || new Date()) }) } onclick={ (e) => onToday(e) } data-toggle="tooltip" title="Reset">
@@ -229,6 +221,21 @@
             selected : true,
           };
         }) : [];
+      }
+
+      /**
+       * get range
+       */
+      getRange() {
+        // return day
+        return ['Day', 'Week', 'Month'].map((title) => {
+          // return value
+          return {
+            name     : title,
+            value    : title.toLowerCase(),
+            selected : (this.props.range || 'month') === title.toLowerCase(),
+          };
+        });
       }
 
       /**
