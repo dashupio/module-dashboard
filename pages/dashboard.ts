@@ -60,11 +60,7 @@ export default class DashboardPage extends Struct {
   get views() {
     // return object of views
     return {
-      chart     : 'chart',
-      dashboard : 'dashboard',
-
-      view   : 'page/dashboard/view',
-      menu   : 'page/dashboard/menu',
+      view   : 'page/dashboard',
       config : 'page/dashboard/config',
     };
   }

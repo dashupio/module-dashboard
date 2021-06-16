@@ -45,9 +45,7 @@ export default class ChartBlock extends Struct {
   get views() {
     // return object of views
     return {
-      chart : 'chart',
-
-      view   : 'block/chart/view',
+      view   : 'block/chart',
       config : 'block/chart/config',
     };
   }

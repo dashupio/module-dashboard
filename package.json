@@ -15,15 +15,17 @@
     "@babel/plugin-transform-typescript": "^7.11.0",
     "@babel/preset-env": "^7.11.5",
     "@dashup/eslint-config-dashup": "0.0.1",
-    "@dashup/module": "^1.0.6",
+    "@dashup/module": "^2.0.2",
+    "@dashup/ui": "0.0.1",
     "apexcharts": "^3.22.0",
     "babel-plugin-add-module-exports": "^1.0.4",
     "bottleneck": "^2.19.5",
     "dot-prop": "^6.0.0",
     "handlebars": "^4.7.7",
-    "jquery-ui": "^1.12.1",
     "moment": "^2.29.1",
     "perfect-scrollbar": "^1.5.0",
+    "react-grid-layout": "^1.2.5",
+    "react-measure": "^2.5.2",
     "uuid": "^8.3.1"
   }
 }

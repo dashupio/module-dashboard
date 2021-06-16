@@ -45,7 +45,7 @@ export default class CardBlock extends Struct {
   get views() {
     // return object of views
     return {
-      view   : 'block/card/view',
+      view   : 'block/card',
       config : 'block/card/config',
     };
   }
