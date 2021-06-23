@@ -1,11 +1,10 @@
 
-import Select from 'react-select';
 import moment from 'moment';
 import shortid from 'shortid';
 import Measure from 'react-measure';
 import GridLayout from 'react-grid-layout';
 import { Modal, Button } from 'react-bootstrap';
-import { Page, Block, View } from '@dashup/ui';
+import { Page, Block, View, Select } from '@dashup/ui';
 import React, { useState, useEffect } from 'react';
 
 // import scss
@@ -262,7 +261,7 @@ const PageDashboard = (props = {}) => {
 
   // return jsx
   return (
-    <Page { ...props } bodyClass="flex-column">
+    <Page { ...props } require={ props.require } bodyClass="flex-column">
 
       <Page.Config show={ config } onHide={ (e) => setConfig(false) } />
 
@@ -318,7 +317,6 @@ const PageDashboard = (props = {}) => {
           </button>
         ) }
       </Page.Menu>
-      SUB MENU
       <Page.Body>
         <div className="flex-1 fit-content">
           <Measure bounds onResize={ ({ bounds }) => setWidth(parseInt(bounds.width, 10)) }>
