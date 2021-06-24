@@ -265,7 +265,7 @@ const PageDashboard = (props = {}) => {
 
       <Page.Config show={ config } onHide={ (e) => setConfig(false) } />
 
-      <Page.Menu onConfig={ () => setConfig(true) } onShare>
+      <Page.Menu onConfig={ () => setConfig(true) } presence={ props.presence }>
         { !updating && (
           <>
             { !!props.page.get('data.model') && (
