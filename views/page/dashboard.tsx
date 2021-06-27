@@ -267,41 +267,43 @@ const PageDashboard = (props = {}) => {
 
       <Page.Menu onConfig={ () => setConfig(true) } presence={ props.presence }>
         { !updating && (
-          <>
-            { !!props.page.get('data.model') && (
+          props.menu ? props.menu({ updating }) : (
+            <>
+              { !!props.page.get('data.model') && (
+                <div className="d-inline-block select-inline me-2">
+                  <View
+                    type="field"
+                    view="input"
+                    struct="model"
+
+                    field={ {
+                      by    : props.page.get('data.by'),
+                      label : 'Model',
+                      model : props.page.get('data.model'),
+                    } }
+
+                    value={ props.item }
+                    dashup={ props.dashup }
+                    noLabel
+                  />
+                </div>
+              ) }
               <div className="d-inline-block select-inline me-2">
-                <View
-                  type="field"
-                  view="input"
-                  struct="model"
-
-                  field={ {
-                    by    : props.page.get('data.by'),
-                    label : 'Model',
-                    model : props.page.get('data.model'),
-                  } }
-
-                  value={ props.item }
-                  dashup={ props.dashup }
-                  noLabel
-                />
+                <Select options={ getRange() } defaultValue={ getRange().filter((f) => f.selected) } onChange={ (val) => setRange(val?.value) } />
               </div>
-            ) }
-            <div className="d-inline-block select-inline me-2">
-              <Select options={ getRange() } defaultValue={ getRange().filter((f) => f.selected) } onChange={ (val) => setRange(val?.value) } />
-            </div>
-            <button className={ `btn me-1 btn-primary${isToday() ? ' disabled' : ''}` } onClick={ (e) => setDate(new Date()) }>
-              { isToday() ? 'Today' : moment(date).format('LL') }
-            </button>
-            <div className="btn-group me-2">
-              <button className="btn btn-primary" onClick={ (e) => onPrev(e) } data-toggle="tooltip" title="Previous">
-                <i className="fa fa-chevron-left" />
+              <button className={ `btn me-1 btn-primary${isToday() ? ' disabled' : ''}` } onClick={ (e) => setDate(new Date()) }>
+                { isToday() ? 'Today' : moment(date).format('LL') }
               </button>
-              <button className="btn btn-primary" onClick={ (e) => onNext(e) } data-toggle="tooltip" title="Next">
-                <i className="fa fa-chevron-right" />
-              </button>
-            </div>
-          </>
+              <div className="btn-group me-2">
+                <button className="btn btn-primary" onClick={ (e) => onPrev(e) } data-toggle="tooltip" title="Previous">
+                  <i className="fa fa-chevron-left" />
+                </button>
+                <button className="btn btn-primary" onClick={ (e) => onNext(e) } data-toggle="tooltip" title="Next">
+                  <i className="fa fa-chevron-right" />
+                </button>
+              </div>
+            </>
+          )
         ) }
 
         { updating && props.dashup.can(props.page, 'manage') && (
@@ -317,6 +319,7 @@ const PageDashboard = (props = {}) => {
           </button>
         ) }
       </Page.Menu>
+      { !!props.subMenu && props.subMenu({ updating }) }
       <Page.Body>
         <div className="flex-1 fit-content">
           <Measure bounds onResize={ ({ bounds }) => setWidth(parseInt(bounds.width, 10)) }>
@@ -349,7 +352,17 @@ const PageDashboard = (props = {}) => {
                         // return block
                         return (
                           <div key={ block.uuid } className="dashup-block">
-                            <Block block={ block } date={ date } range={ range } updating={ updating } onConfig={ setBConfig } onRemove={ setRemove } setBlock={ setBlock } model={ props.page.get('data.model') } { ...getProps() } />
+                            <Block
+                              date={ date }
+                              block={ block }
+                              range={ range }
+                              model={ props.page.get('data.model') }
+                              updating={ updating }
+                              onConfig={ setBConfig }
+                              onRemove={ setRemove }
+                              setBlock={ setBlock }
+                              { ...getProps() }
+                            />
                           </div>
                         );
                       }) }
