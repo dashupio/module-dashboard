@@ -5,6 +5,9 @@ import { Hbs, Chart } from '@dashup/ui';
 import PerfectScrollbar from 'react-perfect-scrollbar';
 import React, { useState, useEffect } from 'react';
 
+// templates
+const templates = {};
+
 // create chart block
 const BlockChart = (props = { range : 'month', date : new Date() }) => {
   // use state
@@ -13,9 +16,6 @@ const BlockChart = (props = { range : 'month', date : new Date() }) => {
 
   // fix context
   const fixContext = (where) => {
-    // tempates
-    if (!this.__templates) this.__templates = {};
-
     // iterate object
     const iter = (obj) => {
       // check keys
@@ -26,10 +26,10 @@ const BlockChart = (props = { range : 'month', date : new Date() }) => {
         // check string
         if (typeof obj[key] === 'string' && obj[key].includes('{{')) {
           // log context
-          if (!this.__templates[obj[key]]) this.__templates[obj[key]] = handlebars.compile(obj[key]);
+          if (!templates[obj[key]]) templates[obj[key]] = handlebars.compile(obj[key]);
 
           // key
-          obj[key] = this.__templates[obj[key]](this.props.context);
+          obj[key] = templates[obj[key]](props.context || {});
         }
       });
 
@@ -91,10 +91,9 @@ const BlockChart = (props = { range : 'month', date : new Date() }) => {
       let query = model;
 
       // check filters
-      // @todo
-      //filter.forEach((where) => {
-      //  query = query.where(fixContext(where));
-      //});
+      filter.forEach((where) => {
+        query = query.where(fixContext(where));
+      });
 
       // return query
       return query;
