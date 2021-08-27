@@ -20,7 +20,7 @@ export default class CardBlock extends Struct {
    */
   get icon() {
     // return page type label
-    return 'fa fa-card';
+    return 'fad fa-pen-square';
   }
 
   /**
@@ -28,7 +28,7 @@ export default class CardBlock extends Struct {
    */
   get title() {
     // return page type label
-    return 'Card Block';
+    return 'Card';
   }
 
   /**
@@ -63,6 +63,6 @@ export default class CardBlock extends Struct {
    */
   get description() {
     // return description string
-    return 'Create a markdown card';
+    return 'Customizable Card Block';
   }
 }

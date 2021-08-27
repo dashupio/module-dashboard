@@ -33,7 +33,7 @@ export default class DashboardPage extends Struct {
    */
   get icon() {
     // return page type label
-    return 'fa fa-chart-line';
+    return 'fad fa-chart-line text-info';
   }
 
   /**
@@ -41,7 +41,7 @@ export default class DashboardPage extends Struct {
    */
   get title() {
     // return page type label
-    return 'Dashboard Page';
+    return 'Dashboard';
   }
 
   /**
@@ -78,7 +78,7 @@ export default class DashboardPage extends Struct {
    */
   get description() {
     // return description string
-    return 'Data visualization dashboard page';
+    return 'Comprehensive charts, reports, and data display';
   }
 
   /**

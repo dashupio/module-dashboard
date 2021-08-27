@@ -20,7 +20,7 @@ export default class ChartBlock extends Struct {
    */
   get icon() {
     // return page type label
-    return 'fa fa-chart-line';
+    return 'fad fa-chart-line';
   }
 
   /**
@@ -28,7 +28,7 @@ export default class ChartBlock extends Struct {
    */
   get title() {
     // return page type label
-    return 'Chart Block';
+    return 'Chart';
   }
 
   /**
@@ -63,6 +63,6 @@ export default class ChartBlock extends Struct {
    */
   get description() {
     // return description string
-    return 'Create a chart on any of your models';
+    return 'Customizable Chart Block';
   }
 }

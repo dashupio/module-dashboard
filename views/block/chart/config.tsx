@@ -1,37 +1,57 @@
 
 // import react
-import React from 'react';
-import { Hbs, View, Query, Select } from '@dashup/ui';
+import shortid from 'shortid';
+import dotProp from 'dot-prop';
+import React, { useState } from 'react';
+import { Query, Select, Color, colors } from '@dashup/ui';
 
 // block list
 const BlockChartConfig = (props = {}) => {
+  // metrics
+  const [color, setColor] = useState(null);
+  const [active, setActive] = useState(null);
+  const [metrics, setMetrics] = useState(props.block.models || []);
 
-  // get forms
-  const getModels = () => {
-    // get forms
-    const forms = Array.from(props.dashup.get('pages').values()).filter((page) => {
-      // return model pages
-      return page.get('type') === 'model' && !page.get('archived');
-    });
-
+  // get chart
+  const getChart = () => {
     // return mapped
-    return forms.map((form) => {
+    return [['area', 'Area'], ['bar', 'Bar'], ['line', 'Line'], ['pie', 'Pie'], ['donut', 'Donut'], ['polarArea', 'Polar Area'], ['radialBar', 'Radial Bar']].map(([type, title]) => {
       // return values
       return {
-        value : form.get('_id'),
-        label : form.get('name'),
+        value : type,
+        label : title,
 
-        selected : (props.model || props.block.model || []).includes(form.get('_id')),
+        selected : (props.block.chart || 'area') === type,
       };
     });
   };
 
   // get forms
-  const getForms = () => {
+  const getModel = (metric) => {
+    // get forms
+    const models = Array.from(props.dashup.get('pages').values()).filter((page) => {
+      // return model pages
+      return page.get('type') === 'model' && !page.get('archived');
+    });
+
+    // return mapped
+    return models.map((model) => {
+      // return values
+      return {
+        value : model.get('_id'),
+        label : model.get('name'),
+
+        selected : metric.model === model.get('_id'),
+      };
+    });
+  };
+
+  // get forms
+  const getForm = (metric) => {
     // get forms
     const forms = Array.from(props.dashup.get('pages').values()).filter((page) => {
       // return model pages
-      return page.get('type') === 'form' && page.get('data.model') === (props.model || props.block.model) && !page.get('archived');
+      return page.get('type') === 'form' && page.get('data.model') === metric.model && !page.get('archived');
     });
 
     // return mapped
@@ -41,18 +61,21 @@ const BlockChartConfig = (props = {}) => {
         value : form.get('_id'),
         label : form.get('name'),
 
-        selected : (props.block.form || []).includes(form.get('_id')),
+        selected : metric.model === form.get('_id'),
       };
     });
   };
   
 
   // get metric
-  const getMetric = () => {
+  const getMetric = (metric) => {
     // return types
     return [{
       value : 'count',
       label : 'Count of Rows'
+    }, {
+      value : 'field',
+      label : 'Count of...'
     }, {
       value : 'sum',
       label : 'Sum of...',
@@ -67,7 +90,7 @@ const BlockChartConfig = (props = {}) => {
       label : 'Maximum of...',
     }].map((item) => {
       // set selected
-      if (item.value === props.block.metric) item.selected = true;
+      if (item.value === metric.metric) item.selected = true;
     
       // return item
       return item;
@@ -75,62 +98,55 @@ const BlockChartConfig = (props = {}) => {
   }
 
   // get fields
-  const getFields = () => {
+  const getFields = (metric) => {
     // return nothing
-    if (!props.block.model) return [];
+    if (!metric.model) return [];
 
     // get forms
-    const forms = props.getForms([props.block.model]);
+    const forms = props.getForms([metric.model]);
     
     // return fields
     return props.getFields(forms);
   }
 
   // get field
-  const getField = () => {
+  const getField = (metric) => {
     // return value
-    return [...(getFields())].filter((f) => ['number', 'money', 'date'].includes(f.type)).map((field) => {
+    return [...(getFields(metric))].filter((f) => metric.metric !== 'field' ? ['number', 'money', 'date'].includes(f.type) : true).map((field) => {
       // return fields
       return {
         label    : field.label,
         value    : field.uuid,
-        selected : props.block.field === field.uuid,
+        selected : metric.field === field.uuid,
       };
     });
   };
 
-  // get group
-  const getGroup = () => {
-    // return value
-    return getFields().map((field) => {
-      // return fields
-      return {
-        label    : field.label,
-        value    : field.uuid,
-        selected : props.block.group === field.uuid,
-      };
-    });
-  }
+  // on remove
+  const onRemove = (metric) => {
+    // new metrics
+    const newMetrics = [...metrics].filter((m) => m.uuid !== metric.uuid);
+
+    // setmetrics
+    setBlock('models', newMetrics);
+    setMetrics(newMetrics);
+  };
 
   // get grouping
-  const getGrouping = () => {
+  const getGrouping = (metric) => {
     // return value
     return [{
       label    : 'Total',
       value    : 'total',
-      selected : (props.block.grouping || 'total') === 'total',
+      selected : (metric.grouping || 'total') === 'total',
     }, {
       label    : 'Created',
       value    : 'created',
-      selected : props.block.grouping === 'created',
+      selected : metric.grouping === 'created',
     }, {
       label    : 'Updated',
       value    : 'updated',
-      selected : props.block.grouping === 'updated',
-    }, {
-      label    : 'Field',
-      value    : 'field',
-      selected : props.block.grouping === 'field',
+      selected : metric.grouping === 'updated',
     }];
   }
 
@@ -140,107 +156,171 @@ const BlockChartConfig = (props = {}) => {
     return props.setBlock(props.block, key, value, prev);
   };
 
-  // on forms
-  const onModel = (value) => {
-    // set data
-    setBlock('model', value?.value);
-  };
+  // set metric
+  const setMetric = (metric, key, value) => {
+    // set metric
+    dotProp.set(metric, key, value);
 
-  // on forms
-  const onForm = (value) => {
-    // set data
-    setBlock('form', value?.value);
+    // set metrics
+    setBlock('models', metrics);
+    setMetrics([...metrics]);
   };
 
   // return jsx
   return (
-    <>
+    <div>
       <div className="mb-3">
-        <label className="form-label">
-          Choose Model
-        </label>
-        <Select options={ getModels() } defaultValue={ getModels().filter((f) => f.selected) } onChange={ onModel } />
-        <small>
-          The model this page should display.
-        </small>
-      </div>
-
-      { !!(props.model || props.block.model) && (
-        <>
-          <div className="mb-3">
-            <label className="form-label">
-              Choose Form
-            </label>
-            <Select options={ getForms() } defaultValue={ getForms().filter((f) => f.selected) } onChange={ onForm } />
-            <small>
-              The forms that this grid will filter by.
-            </small>
-          </div>
-          <div className="mb-3">
-            <label className="form-label">
-              Metric
-            </label>
-            <div>
-              <div className="d-inline-block select-inline me-2">
-                <Select options={ getMetric() } defaultValue={ getMetric().filter((f) => f.selected) } onChange={ (val) => setBlock('metric', val?.value) } />
-              </div>
-              { props.block.metric !== 'count' && (
-                <div className="d-inline-block select-inline me-2">
-                  <Select options={ getField() } defaultValue={ getField().filter((f) => f.selected) } onChange={ (val) => setBlock('field', val?.value) } />
-                </div>
-              ) }
-              <span className="me-2">
-                Grouped by
-              </span>
-              <div className="d-inline-block select-inline me-2">
-                <Select options={ getGrouping() } defaultValue={ getGrouping().filter((f) => f.selected) } onChange={ (val) => setBlock('grouping', val?.value) } />
-              </div>
-              { props.block.grouping === 'field' && (
-                <div className="d-inline-block select-inline me-2">
-                  <Select options={ getGroup() } defaultValue={ getGroup().filter((f) => f.selected) } onChange={ (val) => setBlock('group', val?.value) } />
-                </div>
-              ) }
-            </div>
-          </div>
-        </>
-      ) }
-
-      <hr />
-  
-      <div className="mb-3">
-        <label className="form-label">
-          Element Display
-        </label>
-        <View
-          type="field"
-          view="code"
-          struct="code"
-          mode="handlebars"
-          value={ props.block.display || '{{value}}' }
-          dashup={ props.dashup }
-          onChange={ (val) => setBlock('display', val, true) }
-          />
-        <div className="alert alert-primary mt-2">
-          <Hbs template={ props.block.display || '{{value}}' } data={ { value : 10 } } />
+        <div className="mb-3">
+          <label className="form-label">
+            Choose Chart
+          </label>
+          <Select options={ getChart() } defaultValue={ getChart().filter((f) => f.selected) } onChange={ (val) => setBlock('chart', val?.value) } />
         </div>
       </div>
-            
       <div className="mb-3">
-        <label className="form-label">
-          Filter By
-        </label>
-        <Query
-          isString
-
-          page={ props.page }
-          query={ props.block.filter }
-          dashup={ props.dashup }
-          fields={ getFields() }
-          onChange={ (val) => setBlock('filter', val) }
-          getFieldStruct={ props.getFieldStruct }
-          />
+        <div className="form-check form-switch">
+          <input className="form-check-input" id="is-minimal" type="checkbox" onChange={ (e) => setBlock('minimal', e.target.checked) } checked={ props.block.minimal } />
+          <label className="form-check-label" htmlFor="is-minimal">
+            Minimal Chart
+          </label>
+        </div>
       </div>
-    </>
+      <div className="mb-3">
+        <div className="form-check form-switch">
+          <input className="form-check-input" id="is-totals" type="checkbox" onChange={ (e) => setBlock('totals', e.target.checked) } checked={ props.block.totals } />
+          <label className="form-check-label" htmlFor="is-totals">
+            Enable Totals
+          </label>
+        </div>
+      </div>
+      { !!props.block.totals && (
+        <div className="mb-3">
+          <div className="form-check form-switch">
+            <input className="form-check-input" id="is-center" type="checkbox" onChange={ (e) => setBlock('center', e.target.checked) } checked={ props.block.center } />
+            <label className="form-check-label" htmlFor="is-center">
+              Align Totals Center
+            </label>
+          </div>
+        </div>
+      ) }
+      { !!props.block.totals && (
+        <div className="mb-3">
+          <div className="form-check form-switch">
+            <input className="form-check-input" id="is-previous" type="checkbox" onChange={ (e) => setBlock('previous', e.target.checked) } checked={ props.block.previous } />
+            <label className="form-check-label" htmlFor="is-previous">
+              Enable Since Previous
+            </label>
+          </div>
+        </div>
+      ) }
+      
+      { metrics.map((metric) => {
+        // return jsx
+        return (
+          <div key={ `metric-${metric.uuid}` } className="card mb-3">
+            <div className="card-body">
+              <div className="d-flex flex-row mb-3">
+                <div className="flex-0 me-3">
+                  <div className="mb-3">
+                    <label className="d-block form-label">
+                      Color
+                    </label>
+                    <button type="button" className="btn px-3" onClick={ (e) => !setActive(metric) && setColor(e.target) } style={ {
+                      background : metric.color?.hex,
+                    } }>
+                      &nbsp;
+                    </button>
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <label className="form-label">
+                    Label
+                  </label>
+                  <input className="form-control" value={ metric.label || '' } onChange={ (e) => setMetric(metric, 'label', e.target.value) } />
+                </div>
+                <div className="flex-0 ms-3">
+                  <label className="form-label">
+                    Remove
+                  </label>
+                  <button type="button" className="btn btn-danger px-3" onClick={ (e) => onRemove(metric) }>
+                    <i className="fa fa-trash" />
+                  </button>
+                </div>
+              </div>
+              <div className="mb-3">
+                <label className="form-label">
+                  Choose Model
+                </label>
+                <Select options={ getModel(metric) } defaultValue={ getModel(metric).filter((f) => f.selected) } onChange={ (val) => setMetric(metric, 'model', val?.value) } />
+                <small>
+                  The model this page should display.
+                </small>
+              </div>
+
+              { !!metric.model && (
+                <>
+                  <div className="mb-3">
+                    <label className="form-label">
+                      Choose Form
+                    </label>
+                    <Select options={ getForm(metric) } defaultValue={ getForm(metric).filter((f) => f.selected) } onChange={ (val) => setMetric(metric, 'form', val?.value) } />
+                    <small>
+                      The form that this grid will filter by.
+                    </small>
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">
+                      Metric
+                    </label>
+                    <div>
+                      <div className="d-inline-block select-inline me-2">
+                        <Select options={ getMetric(metric) } defaultValue={ getMetric(metric).filter((f) => f.selected) } onChange={ (val) => setMetric(metric, 'metric', val?.value) } />
+                      </div>
+                      { metric.metric !== 'count' && (
+                        <div className="d-inline-block select-inline me-2">
+                          <Select options={ getField(metric) } defaultValue={ getField(metric).filter((f) => f.selected) } onChange={ (val) => setMetric(metric, 'field', val?.value) } />
+                        </div>
+                      ) }
+                      <span className="me-2">
+                        Grouped by
+                      </span>
+                      <div className="d-inline-block select-inline me-2">
+                        <Select options={ getGrouping(metric) } defaultValue={ getGrouping(metric).filter((f) => f.selected) } onChange={ (val) => setMetric(metric, 'grouping', val?.value) } />
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) }
+
+              <hr />
+                    
+              <div>
+                <label className="form-label">
+                  Filter By
+                </label>
+                <Query
+                  isString
+
+                  page={ props.page }
+                  query={ metric.filter }
+                  dashup={ props.dashup }
+                  fields={ getFields(metric) }
+                  onChange={ (val) => setMetric(metric, 'filter', val) }
+                  getFieldStruct={ props.getFieldStruct }
+                  />
+              </div>
+            </div>
+          </div>
+        )
+      }) }
+      <div className="d-flex">
+        <button className="btn btn-success" onClick={ (e) => setMetrics([...metrics, { uuid : shortid() }])}>
+          Add Metric
+        </button>
+      </div>
+
+      { !!active && !!color && <Color target={ color } show color={ active?.hex || 'transparent' } colors={ Object.values(colors) } onHide={ () => !setActive(null) && setColor(null) } onChange={ (hex) => setMetric(active, 'color', hex.hex === 'transparent' ? null : hex) } /> }
+    </div>
   );
 }
 

@@ -6,3 +6,21 @@
 .react-grid-item > .react-resizable-handle.react-resizable-handle-se {
   z-index : 10;
 }
+.apexcharts-text,
+.apexcharts-legend-text {
+  fill  : var(--du-background-color)!important;
+  color : var(--du-background-color)!important;
+}
+.apexcharts-menu {
+  border     : 0!important;
+  background : var(--du-background)!important;
+
+  .apexcharts-menu-item:hover {
+    background : rgba(0, 0, 0, 0.15)!important;
+  }
+}
+.react-grid-item.dashup-block {
+  &:hover {
+    z-index : 10!important;
+  }
+}

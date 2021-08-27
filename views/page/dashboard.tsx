@@ -55,7 +55,7 @@ const PageDashboard = (props = {}) => {
     };
 
     // find field
-    const actualField = newBlocks.find((b) => b.uuid === block.uuid);
+    const actualBlock = newBlocks.find((b) => b.uuid === block.uuid);
 
     // fix obj
     if (typeof key === 'object') {
@@ -68,7 +68,8 @@ const PageDashboard = (props = {}) => {
 
     // set to field
     Object.keys(updates).forEach((k) => {
-      actualField[k] = updates[k];
+      block[k] = updates[k];
+      actualBlock[k] = updates[k];
     });
     
     // set page
@@ -76,6 +77,31 @@ const PageDashboard = (props = {}) => {
 
     // loading
     setSaving(false);
+  };
+
+  // on clone
+  const onClone = async (block) => {
+    // create block
+    const newBlock = {
+      ...block,
+      uuid  : shortid(),
+      _grid : {
+        w : 3,
+        h : 10,
+        x : 0,
+        y : (props.page.get('data.blocks') || []).reduce((top, block) => {
+          // check above
+          if (block?._grid?.w && (block._grid.w + block._grid.y) > top) return (block._grid.w + block._grid.y) + 1;
+
+          // default top
+          return top;
+        }, 0),
+      },
+    };
+    
+    // set page
+    setMenu(false);
+    await setBlocks([...(props.page.get('data.blocks') || []), newBlock]);
   };
 
   // create block
@@ -249,10 +275,10 @@ const PageDashboard = (props = {}) => {
         </p>
       </Modal.Body>
       <Modal.Footer>
-        <Button variant="primary" onClick={ (e) => !setRemove(null) && e.preventDefault() }>
+        <Button variant="secondary" onClick={ (e) => !setRemove(null) && e.preventDefault() }>
           Close
         </Button>
-        <Button variant="danger" className="ms-2" onClick={ (e) => onRemove(remove) }>
+        <Button variant="danger" className="ms-auto" onClick={ (e) => onRemove(remove) }>
           Confirm
         </Button>
       </Modal.Footer>
@@ -357,6 +383,7 @@ const PageDashboard = (props = {}) => {
                               block={ block }
                               range={ range }
                               model={ props.page.get('data.model') }
+                              onClone={ onClone }
                               updating={ updating }
                               onConfig={ setBConfig }
                               onRemove={ setRemove }

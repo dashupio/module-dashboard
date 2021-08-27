@@ -1,7 +1,7 @@
 
 // import react
 import { Hbs } from '@dashup/ui';
-import PerfectScrollbar from 'react-perfect-scrollbar';
+import SimpleBar from 'simplebar-react';
 import React, { useState } from 'react';
 
 // create chart block
@@ -31,11 +31,11 @@ const BlockCard = (props = {}) => {
           </ul>
         </div>
       ) }
-      <PerfectScrollbar className={ `flex-column p-relative ${props.block.background ? 'card-body' : 'flex-1'}` }>
+      <SimpleBar className={ `flex-column p-relative ${props.block.background ? 'card-body' : 'flex-1'}` }>
         { !!(props.block.tabs || []).length && (
           <Hbs template={ props.block.tabs[tab].display || '' } data={ props.item ? props.item.get() : {} } />
         ) }
-      </PerfectScrollbar>
+      </SimpleBar>
     </div>
   );
 };
