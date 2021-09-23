@@ -3,9 +3,8 @@ import moment from 'moment';
 import shortid from 'shortid';
 import Measure from 'react-measure';
 import GridLayout from 'react-grid-layout';
-import { Modal, Button } from 'react-bootstrap';
-import { Page, Block, View, Select } from '@dashup/ui';
 import React, { useState, useEffect } from 'react';
+import { Modal, Button, Page, Block, View, Select } from '@dashup/ui';
 
 // import scss
 import './dashboard.scss';
