@@ -1,7 +1,7 @@
 
 // import react
 import React from 'react';
-import { Hbs, View, Query } from '@dashup/ui';
+import { Box, Button, View, Card, CardHeader, CardContent, IconButton, Icon, TextField } from '@dashup/ui';
 
 // block list
 const BlockChartConfig = (props = {}) => {
@@ -45,9 +45,9 @@ const BlockChartConfig = (props = {}) => {
   };
 
   // on title
-  const onTitle = (e, tab) => {
+  const onName = (e, tab) => {
     // set value
-    tab.title = e.target.value;
+    tab.name = e.target.value;
 
     // run opts
     setBlock('tabs', props.block.tabs);
@@ -62,55 +62,69 @@ const BlockChartConfig = (props = {}) => {
     setBlock('tabs', props.block.tabs);
   };
 
-  // on background
-  const onBackground = (e) => {
-    // on background
-    setBlock('background', e.target.checked);
+  // on display
+  const onOpen = (tab, value) => {
+    // set display
+    tab.open = value;
+    
+    // set color
+    setBlock('tabs', props.block.tabs);
   };
 
   // return jsx
   return (
     <>
-      <div className="mb-3">
-        <div className="form-check form-switch">
-          <input className="form-check-input" id="is-required" type="checkbox" onChange={ onBackground } checked={ props.block.background } />
-          <label className="form-check-label" htmlFor="is-required">
-            Enable Background
-          </label>
-        </div>
-      </div>
-
-      <hr />
-    
       { (props.block.tabs || []).map((tab, i) => {
         // return jsx
         return (
-          <div key={ `tab-config-${i}` } className="mb-3">
-            <label className="form-label">
-              Tab #{ i + 1 }
-            </label>
-            <div className="d-flex mb-2">
-              <input type="text" name="tab[{ i }]" value={ tab.title } className="form-control flex-1" onChange={ (e) => onTitle(e, tab) } />
-              <button className="btn btn-danger ms-2" onClick={ (e) => onRemove(e, i) }>
-                <i className="fa fa-times" />
-              </button>
-            </div>
-            <View
-              type="field"
-              view="code"
-              struct="code"
-              mode="handlebars"
-              value={ tab.display || '' }
-              dashup={ props.dashup }
-              onChange={ (val) => onDisplay(tab, val) }
-              />
-          </div>
+          <Card key={ `tab-${i}` } sx={ {
+            mb : 2,
+          } } variant="outlined">
+            <CardHeader
+              title={ tab.name || `Tab #${i + 1}` }
+              action={ (
+                <>
+                  <IconButton onClick={ (e) => onOpen(tab, !tab.open) }>
+                    <Icon type="fas" icon={ tab.open ? 'times' : 'pencil' } />
+                  </IconButton>
+                  <IconButton onClick={ (e) => onRemove(e, i) } color="error">
+                    <Icon type="fas" icon="trash" />
+                  </IconButton>
+                </>
+              ) }
+            />
+            { tab.open && (
+              <CardContent>
+                <TextField
+                  label="Tab Name"
+                  value={ tab.name }
+                  onChange={ (e) => onName(e, tab) }
+                  fullWidth
+                />
+                <View
+                  type="field"
+                  view="input"
+                  mode="handlebars"
+                  struct="code"
+                  field={ {
+                    label : 'Display',
+                  } }
+                  value={ tab.display }
+                  dashup={ props.dashup }
+                  onChange={ (f, val) => onDisplay(tab, val) }
+                  />
+              </CardContent>
+            ) }
+            <Box />
+          </Card>
         );
       }) }
 
-      <button className="btn btn-success me-3" onClick={ (e) => onCreate(e) }>
-        Add Tab
-      </button>
+      <Box textAlign="right">
+        <Button color="success"  onClick={ (e) => onCreate(e) }>
+          Add Tab
+        </Button>
+      </Box>
     </>
   );
 }

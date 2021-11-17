@@ -1,8 +1,8 @@
 
 // import react
 import moment from 'moment';
-import { Hbs, Chart, colors } from '@dashup/ui';
 import React, { useState, useEffect } from 'react';
+import { Box, Hbs, Chart, colors, Card, CardContent, CardHeader, CircularProgress } from '@dashup/ui';
 
 // templates
 const templates = {};
@@ -297,7 +297,7 @@ const BlockChart = (props = { range : 'month', date : new Date() }) => {
     let labels = [];
     let series = values.map((val) => {
       return {
-        name : val.label,
+        name : val.name,
         data : val.series,
       };
     });
@@ -305,8 +305,8 @@ const BlockChart = (props = { range : 'month', date : new Date() }) => {
     // check type
     if (['pie', 'donut', 'polarArea', 'radialBar'].includes(props.block.chart)) {
       // totals
+      labels = values.map((val) => val.name);
       series = values.map((val) => val.total);
-      labels = values.map((val) => val.label);
     }
     
     // return parsed data
@@ -336,13 +336,13 @@ const BlockChart = (props = { range : 'month', date : new Date() }) => {
             show   : true,
             export : {
               csv : {
-                filename : `${props.block.label || props.block.uuid}`,
+                filename : `${props.block.name || props.block.uuid}`,
               },
               svg : {
-                filename : `${props.block.label || props.block.uuid}`,
+                filename : `${props.block.name || props.block.uuid}`,
               },
               png : {
-                filename : `${props.block.label || props.block.uuid}`,
+                filename : `${props.block.name || props.block.uuid}`,
               }
             },
           },
@@ -402,63 +402,73 @@ const BlockChart = (props = { range : 'month', date : new Date() }) => {
 
   // return jsx
   return (
-    <div className="card h-100 p-relative">
-      { !!props.block.label && (
-        <div className="card-header d-flex">
-          { props.block.label }
-          <span className="ms-auto">
-            { `${props.range === 'day' ? '' : `${ucFirst(props.range)} of `}${moment(props.date).startOf(props.range).format('MMM Do')}` }
-          </span>
-        </div>
+    <Card sx={ {
+      width         : '100%',
+      height        : '100%',
+      display       : 'flex',
+      overflow      : 'initial',
+      flexDirection : 'column',
+    } }>
+      { !!props.block.name && (
+        <CardHeader
+          title={ `${props.block.name || ''} ${props.range === 'day' ? '' : `${ucFirst(props.range)} of `}${moment(props.date).startOf(props.range).format('MMM Do')}` }
+        />
       ) }
       { !!props.block.totals && (
-        <div className="card-body d-flex flex-0">
+        <CardContent sx={ {
+          flex : 1,
+        } }>
           { chart.values?.map((value, i) => {
             // return jsx
             return (
-              <div key={ `uuid-${value.uuid}` } className={ `w-100${props.block.center ? ' text-center' : ''}` }>
-                <div className="chart-title text-bold lead mb-0" style={ {
-                  color : value.color?.hex,
-                } }>
-                  <Hbs template={ value.display || `{{value}} ${value.label}` } data={ { value : (value.total || 0) } } isInline />
-                </div>
+              <Box key={ `value-${i}` } sx={ {
+                color : value.color?.hex,
+              } }>
+                <Hbs template={ value.display || `{{value}} ${value.name}` } data={ { value : (value.total || 0) } } isInline />
+
                 { !!props.block.previous && (
-                  <div className="m-0 text-bold">
+                  <Box sx={ {
+                    fontWeight : 'bold',
+                  } }>
                     { (value.last || 0) > (value.current || 0) && (
                       <>
-                        -<Hbs template={ value.display || `{{value}} ${value.label}` } data={ { value : (value.last || 0) - (value.current || 0) } } isInline />
+                        -<Hbs template={ value.display || `{{value}} ${value.name}` } data={ { value : (value.last || 0) - (value.current || 0) } } isInline />
                         { ` (-${getDifference((value.last || 0), (value.current || 0))}%) ` }
                       </>
                     ) }
                     { (value.last || 0) < (value.current || 0) && (
                       <>
-                        +<Hbs template={ value.display || `{{value}} ${value.label}` } data={ { value : (value.current || 0) - (value.last || 0) } } isInline />
+                        +<Hbs template={ value.display || `{{value}} ${value.name}` } data={ { value : (value.current || 0) - (value.last || 0) } } isInline />
                         { ` (+${getDifference((value.last || 0), (value.current || 0))}%) ` }
                       </>
                     ) }
                     { (value.last || 0) === (value.current || 0) ? `No change` : '' }
                     { ` since previous ${props.range} ` }
-                  </div>
+                  </Box>
                 ) }
-              </div>
+              </Box>
             );
           }) }
-        </div>
+        </CardContent>
       ) }
-      { loading ? (
-        <div className="d-flex align-items-center flex-1">
-          <div className="w-100 text-center">
-            <i className="h1 fa fa-spinner fa-spin" />
-          </div>
-        </div>
-      ) : (
-        <div className="card-body d-flex flex-column">
-          <div className="w-100 h-100 fit-content">
-            <Chart { ...chart } />
-          </div>
-        </div>
-      ) }
-    </div>
+      <CardContent sx={ {
+        flex    : 1,
+        display : 'flex',
+      } }>
+        { loading ? (
+          <Box flex={ 1 } alignItems="center" justifyContent="center">
+            <CircularProgress />
+          </Box>
+        ) : (
+          <Box flex={ 1 } position="relative">
+            <Box position="absolute" left={ 0 } right={ 0 } top={ 0 } bottom={ 0 }>
+              <Chart { ...chart } />
+            </Box>
+          </Box>
+        ) }
+      </CardContent>
+      <Box />
+    </Card>
   );
 };
 

@@ -4,10 +4,19 @@ import shortid from 'shortid';
 import Measure from 'react-measure';
 import GridLayout from 'react-grid-layout';
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, Page, Block, View, Select } from '@dashup/ui';
+import { Box, Modal, Button, Page, Block, View, Select, Tooltip, IconButton, Icon, Menu, MenuItem } from '@dashup/ui';
 
 // import scss
 import './dashboard.scss';
+
+// timeout
+let timeout;
+
+// debounce
+const debounce = (fn, to = 200) => {
+  clearTimeout(timeout);
+  timeout = setTimeout(fn, to);
+};
 
 // application page
 const PageDashboard = (props = {}) => {
@@ -22,6 +31,7 @@ const PageDashboard = (props = {}) => {
   const [bConfig, setBConfig] = useState(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [rangeMenu, setRangeMenu] = useState(false);
 
   // default blocks
   const defaultBlocks = [];
@@ -44,7 +54,7 @@ const PageDashboard = (props = {}) => {
   };
 
   // set page
-  const setBlock = async (block, key, value, prevent) => {
+  const setBlock = (block, key, value, prevent) => {
     // new blocks
     const newBlocks = props.page.get('data.blocks') || [];
 
@@ -62,20 +72,26 @@ const PageDashboard = (props = {}) => {
       prevent = value;
     }
 
-    // loading
-    setSaving(true);
-
     // set to field
     Object.keys(updates).forEach((k) => {
       block[k] = updates[k];
       actualBlock[k] = updates[k];
     });
-    
-    // set page
-    await setBlocks(newBlocks, prevent);
 
-    // loading
-    setSaving(false);
+    // set date
+    setDate(new Date());
+
+    // debounce
+    debounce(async () => {
+      // loading
+      setSaving(true);
+      
+      // set page
+      await setBlocks(newBlocks, prevent);
+
+      // loading
+      setSaving(false);
+    }, 200);
   };
 
   // on clone
@@ -295,7 +311,7 @@ const PageDashboard = (props = {}) => {
           props.menu ? props.menu({ updating }) : (
             <>
               { !!props.page.get('data.model') && (
-                <div className="d-inline-block select-inline me-2">
+                <Box minWidth={ 240 }>
                   <View
                     type="field"
                     view="input"
@@ -311,37 +327,61 @@ const PageDashboard = (props = {}) => {
                     dashup={ props.dashup }
                     noLabel
                   />
-                </div>
+                </Box>
               ) }
-              <div className="d-inline-block select-inline me-2">
-                <Select options={ getRange() } defaultValue={ getRange().filter((f) => f.selected) } onChange={ (val) => setRange(val?.value) } />
-              </div>
-              <button className={ `btn me-1 btn-primary${isToday() ? ' disabled' : ''}` } onClick={ (e) => setDate(new Date()) }>
-                { isToday() ? 'Today' : moment(date).format('LL') }
-              </button>
-              <div className="btn-group me-2">
-                <button className="btn btn-primary" onClick={ (e) => onPrev(e) } data-toggle="tooltip" title="Previous">
-                  <i className="fa fa-chevron-left" />
-                </button>
-                <button className="btn btn-primary" onClick={ (e) => onNext(e) } data-toggle="tooltip" title="Next">
-                  <i className="fa fa-chevron-right" />
-                </button>
-              </div>
             </>
           )
         ) }
+        { !props.menu && !updating && (
+          <>
+            <Button variant="contained" color="primary" onClick={ (e) => setRangeMenu(e.target) }>
+              { range }
+            </Button>
+            <Menu
+              open={ !!rangeMenu }
+              onClose={ () => setRangeMenu(false) }
+              anchorEl={ rangeMenu }
+            >
+              { getRange().map((option) => {
+                // return jsx
+                return (
+                  <MenuItem key={ option.value } onClick={ () => !setRangeMenu(false) && setRange(option.value) }>
+                    { option.label }
+                  </MenuItem>
+                );
+              }) }
+            </Menu>
+          </>
+        ) }
+        { !props.menu && !updating && (
+          <Button variant="contained" color="primary" disabled={ !!isToday() } onClick={ (e) => setDate(new Date()) }>
+            { isToday() ? 'Today' : moment(date).format('LL') }
+          </Button>
+        ) }
+        { !props.menu && !updating && (
+          <Box>
+            <Tooltip title="Previous">
+              <IconButton onClick={ (e) => onPrev(e) }>
+                <Icon type="fas" icon="chevron-left" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Next">
+              <IconButton onClick={ (e) => onNext(e) }>
+                <Icon type="fas" icon="chevron-right" />
+              </IconButton>
+            </Tooltip>
+          </Box>
+        ) }
 
         { updating && props.dashup.can(props.page, 'manage') && (
-          <button className="me-2 btn btn-primary" onClick={ () => setMenu(true) }>
-            <i className="fa fa-plus me-2" />
+          <Button variant="contained" color="primary" onClick={ () => setMenu(true) }>
             Add Block
-          </button>
+          </Button>
         ) }
         { props.dashup.can(props.page, 'manage') && (
-          <button className={ `me-2 btn btn-${!updating ? 'link text-dark' : 'primary'}` } onClick={ (e) => setUpdating(!updating) }>
-            <i className={ `fat fa-${!updating ? 'pencil' : 'check'} me-2` } />
-            { !updating ? 'Update Grid' : 'Finish Updating' }
-          </button>
+          <Button variant="contained" color={ updating ? 'success' : 'primary' } onClick={ () => setUpdating(!updating) }>
+            { updating ? 'Finish' : 'Update View' }
+          </Button>
         ) }
       </Page.Menu>
       { !!props.subMenu && props.subMenu({ updating }) }
@@ -376,7 +416,7 @@ const PageDashboard = (props = {}) => {
                       { (props.page.get('data.blocks') || []).map((block, i) => {
                         // return block
                         return (
-                          <div key={ block.uuid } className="dashup-block">
+                          <Box key={ block.uuid }>
                             <Block
                               date={ date }
                               block={ block }
@@ -389,7 +429,7 @@ const PageDashboard = (props = {}) => {
                               setBlock={ setBlock }
                               { ...getProps() }
                             />
-                          </div>
+                          </Box>
                         );
                       }) }
                     </GridLayout>

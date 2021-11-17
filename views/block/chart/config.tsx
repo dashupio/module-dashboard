@@ -3,7 +3,7 @@
 import shortid from 'shortid';
 import dotProp from 'dot-prop';
 import React, { useState } from 'react';
-import { Query, Select, Color, colors } from '@dashup/ui';
+import { Box, Button, Stack, Query, Color, colors, TextField, MenuItem, FormGroup, FormControlLabel, Switch, Card, Divider, CardContent, CardHeader, IconButton, Icon } from '@dashup/ui';
 
 // block list
 const BlockChartConfig = (props = {}) => {
@@ -168,159 +168,185 @@ const BlockChartConfig = (props = {}) => {
 
   // return jsx
   return (
-    <div>
-      <div className="mb-3">
-        <div className="mb-3">
-          <label className="form-label">
-            Choose Chart
-          </label>
-          <Select options={ getChart() } defaultValue={ getChart().filter((f) => f.selected) } onChange={ (val) => setBlock('chart', val?.value) } />
-        </div>
-      </div>
-      <div className="mb-3">
-        <div className="form-check form-switch">
-          <input className="form-check-input" id="is-minimal" type="checkbox" onChange={ (e) => setBlock('minimal', e.target.checked) } checked={ props.block.minimal } />
-          <label className="form-check-label" htmlFor="is-minimal">
-            Minimal Chart
-          </label>
-        </div>
-      </div>
-      <div className="mb-3">
-        <div className="form-check form-switch">
-          <input className="form-check-input" id="is-totals" type="checkbox" onChange={ (e) => setBlock('totals', e.target.checked) } checked={ props.block.totals } />
-          <label className="form-check-label" htmlFor="is-totals">
-            Enable Totals
-          </label>
-        </div>
-      </div>
-      { !!props.block.totals && (
-        <div className="mb-3">
-          <div className="form-check form-switch">
-            <input className="form-check-input" id="is-center" type="checkbox" onChange={ (e) => setBlock('center', e.target.checked) } checked={ props.block.center } />
-            <label className="form-check-label" htmlFor="is-center">
-              Align Totals Center
-            </label>
-          </div>
-        </div>
-      ) }
-      { !!props.block.totals && (
-        <div className="mb-3">
-          <div className="form-check form-switch">
-            <input className="form-check-input" id="is-previous" type="checkbox" onChange={ (e) => setBlock('previous', e.target.checked) } checked={ props.block.previous } />
-            <label className="form-check-label" htmlFor="is-previous">
-              Enable Since Previous
-            </label>
-          </div>
-        </div>
-      ) }
+    <>
+      <TextField
+        label="Choose Chart"
+        value={ props.block.chart || 'area' }
+        onChange={ (e) => setBlock('chart', e.target.value) }
+        select
+        fullWidth
+      >
+        { getChart().map((option) => {
+          // return jsx
+          return (
+            <MenuItem key={ option.value } value={ option.value }>
+              { option.label }
+            </MenuItem>
+          );
+        }) }
+      </TextField>
       
-      { metrics.map((metric) => {
+      <FormGroup>
+        <FormControlLabel control={ <Switch defaultChecked={ props.block.minimal } onChange={ (e) => setBlock('minimal', e.target.checked) } /> } label="Minimal Chart" />
+      </FormGroup>
+      
+      <FormGroup>
+        <FormControlLabel control={ <Switch defaultChecked={ props.block.totals } onChange={ (e) => setBlock('totals', e.target.checked) } /> } label="Enable Totals" />
+      </FormGroup>
+      
+      { !!props.block.totals && (
+        <FormGroup>
+          <FormControlLabel control={ <Switch defaultChecked={ props.block.previous } onChange={ (e) => setBlock('previous', e.target.checked) } /> } label="Enable Since Previous" />
+        </FormGroup>
+      ) }
+
+      <Box my={ 2 }>
+        <Divider />
+      </Box>
+
+      { !!active && !!color && <Color target={ color } show color={ active?.hex } colors={ Object.values(colors) } onClose={ () => !setActive(null) && setColor(null) } onChange={ (hex) => setMetric(active, 'color', hex.hex === 'transparent' ? null : hex) } /> }
+      
+      { metrics.map((metric, i) => {
         // return jsx
         return (
-          <div key={ `metric-${metric.uuid}` } className="card mb-3">
-            <div className="card-body">
-              <div className="d-flex flex-row mb-3">
-                <div className="flex-0 me-3">
-                  <div className="mb-3">
-                    <label className="d-block form-label">
-                      Color
-                    </label>
-                    <button type="button" className="btn px-3" onClick={ (e) => !setActive(metric) && setColor(e.target) } style={ {
-                      background : metric.color?.hex,
-                    } }>
-                      &nbsp;
-                    </button>
-                  </div>
-                </div>
-                <div className="flex-1">
-                  <label className="form-label">
-                    Label
-                  </label>
-                  <input className="form-control" value={ metric.label || '' } onChange={ (e) => setMetric(metric, 'label', e.target.value) } />
-                </div>
-                <div className="flex-0 ms-3">
-                  <label className="form-label">
-                    Remove
-                  </label>
-                  <button type="button" className="btn btn-danger px-3" onClick={ (e) => onRemove(metric) }>
-                    <i className="fa fa-trash" />
-                  </button>
-                </div>
-              </div>
-              <div className="mb-3">
-                <label className="form-label">
-                  Choose Model
-                </label>
-                <Select options={ getModel(metric) } defaultValue={ getModel(metric).filter((f) => f.selected) } onChange={ (val) => setMetric(metric, 'model', val?.value) } />
-                <small>
-                  The model this page should display.
-                </small>
-              </div>
-
-              { !!metric.model && (
+          <Card key={ `metric-${metric.uuid}` } sx={ {
+            mb : 2,
+          } } variant="outlined">
+            <CardHeader
+              title={ metric.name || `Metric #${i + 1}` }
+              action={ (
                 <>
-                  <div className="mb-3">
-                    <label className="form-label">
-                      Choose Form
-                    </label>
-                    <Select options={ getForm(metric) } defaultValue={ getForm(metric).filter((f) => f.selected) } onChange={ (val) => setMetric(metric, 'form', val?.value) } />
-                    <small>
-                      The form that this grid will filter by.
-                    </small>
-                  </div>
-                  <div className="mb-3">
-                    <label className="form-label">
-                      Metric
-                    </label>
-                    <div>
-                      <div className="d-inline-block select-inline me-2">
-                        <Select options={ getMetric(metric) } defaultValue={ getMetric(metric).filter((f) => f.selected) } onChange={ (val) => setMetric(metric, 'metric', val?.value) } />
-                      </div>
-                      { metric.metric !== 'count' && (
-                        <div className="d-inline-block select-inline me-2">
-                          <Select options={ getField(metric) } defaultValue={ getField(metric).filter((f) => f.selected) } onChange={ (val) => setMetric(metric, 'field', val?.value) } />
-                        </div>
-                      ) }
-                      <span className="me-2">
-                        Grouped by
-                      </span>
-                      <div className="d-inline-block select-inline me-2">
-                        <Select options={ getGrouping(metric) } defaultValue={ getGrouping(metric).filter((f) => f.selected) } onChange={ (val) => setMetric(metric, 'grouping', val?.value) } />
-                      </div>
-                    </div>
-                  </div>
+                  <IconButton onClick={ (e) => setMetric(metric, 'open', !metric.open) }>
+                    <Icon type="fas" icon={ metric.open ? 'times' : 'pencil' } />
+                  </IconButton>
+                  <IconButton onClick={ (e) => onRemove(metric) } color="error">
+                    <Icon type="fas" icon="trash" />
+                  </IconButton>
                 </>
               ) }
+            />
+            { !!metric.open && (
+              <CardContent>
+                <Stack direction="row" spacing={ 2 } sx={ {
+                  mb : 2,
+                } }>
+                  <Button variant="contained" onClick={ (e) => !setActive(metric) && setColor(e.target) } sx={ {
+                    color           : metric.color?.hex && theme.palette.getContrastText(metric.color?.hex),
+                    backgroundColor : metric.color?.hex,
+                  } }>
+                    <Icon type="fas" icon="tint" />
+                  </Button>
+                  <TextField
+                    value={ metric.name || '' }
+                    label="Name"
+                    onChange={ (e) => setMetric(metric, 'name', e.target.value) }
+                    fullWidth
+                  />
+                </Stack>
+                <TextField
+                  label="Chart Model"
+                  value={ metric.model }
+                  select
+                  onChange={ (e) => setMetric(metric, 'model', e.target.value) }
+                  fullWidth
+                  helperText="View Chart with this model's items."
+                >
+                  { getModel(metric).map((option) => (
+                    <MenuItem key={ option.value } value={ option.value }>
+                      { option.label }
+                    </MenuItem>
+                  ))}
+                </TextField>
 
-              <hr />
-                    
-              <div>
-                <label className="form-label">
-                  Filter By
-                </label>
+                { !!metric.model && (
+                  <>
+                    <TextField
+                      label="Choose Form"
+                      value={ metric.form }
+                      select
+                      onChange={ (e) => setMetric(metric, 'form', e.target.value) }
+                      fullWidth
+                      helperText="The form that this grid will filter by."
+                    >
+                      { getForm(metric).map((option) => (
+                        <MenuItem key={ option.value } value={ option.value }>
+                          { option.label }
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                    <TextField
+                      label="Choose Metric"
+                      value={ metric.metric }
+                      select
+                      onChange={ (e) => setMetric(metric, 'metric', e.target.value) }
+                      fullWidth
+                    >
+                      { getMetric(metric).map((option) => (
+                        <MenuItem key={ option.value } value={ option.value }>
+                          { option.label }
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                    { metric.metric !== 'count' && (
+                      <TextField
+                        label="Choose Field"
+                        value={ metric.field }
+                        select
+                        onChange={ (e) => setMetric(metric, 'field', e.target.value) }
+                        fullWidth
+                      >
+                        { getField(metric).map((option) => (
+                          <MenuItem key={ option.value } value={ option.value }>
+                            { option.label }
+                          </MenuItem>
+                        ))}
+                      </TextField>
+                    ) }
+                    <TextField
+                      label="Grouped by"
+                      value={ metric.grouping }
+                      select
+                      onChange={ (e) => setMetric(metric, 'grouping', e.target.value) }
+                      fullWidth
+                    >
+                      { getGrouping(metric).map((option) => (
+                        <MenuItem key={ option.value } value={ option.value }>
+                          { option.label }
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  </>
+                ) }
+
+                <Box my={ 2 }>
+                  <Divider />
+                </Box>
+
                 <Query
                   isString
 
                   page={ props.page }
+                  label="Filter By"
                   query={ metric.filter }
                   dashup={ props.dashup }
                   fields={ getFields(metric) }
                   onChange={ (val) => setMetric(metric, 'filter', val) }
                   getFieldStruct={ props.getFieldStruct }
-                  />
-              </div>
-            </div>
-          </div>
-        )
+                />
+              </CardContent>
+            ) }
+            <Box />
+          </Card>
+        );
       }) }
-      <div className="d-flex">
-        <button className="btn btn-success" onClick={ (e) => setMetrics([...metrics, { uuid : shortid() }])}>
-          Add Metric
-        </button>
-      </div>
 
-      { !!active && !!color && <Color target={ color } show color={ active?.hex || 'transparent' } colors={ Object.values(colors) } onHide={ () => !setActive(null) && setColor(null) } onChange={ (hex) => setMetric(active, 'color', hex.hex === 'transparent' ? null : hex) } /> }
-    </div>
+      <Box textAlign="right">
+        <Button color="success"  onClick={ (e) => setMetrics([...metrics, { uuid : shortid() }]) }>
+          Add Metric
+        </Button>
+      </Box>
+
+    </>
   );
 }
 
