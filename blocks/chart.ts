@@ -55,7 +55,7 @@ export default class ChartBlock extends Struct {
    */
   get categories() {
     // return array of categories
-    return ['dashboard'];
+    return ['phone', 'website', 'dashboard'];
   }
 
   /**

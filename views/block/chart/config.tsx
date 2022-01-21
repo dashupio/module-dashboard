@@ -3,7 +3,7 @@
 import shortid from 'shortid';
 import dotProp from 'dot-prop';
 import React, { useState } from 'react';
-import { Box, Button, Stack, Query, Color, colors, TextField, MenuItem, FormGroup, FormControlLabel, Switch, Card, Divider, CardContent, CardHeader, IconButton, Icon } from '@dashup/ui';
+import { Box, Button, Stack, View, Query, Color, colors, TextField, MenuItem, FormGroup, FormControlLabel, Switch, Card, Divider, CardContent, CardHeader, IconButton, Icon } from '@dashup/ui';
 
 // block list
 const BlockChartConfig = (props = {}) => {
@@ -15,7 +15,7 @@ const BlockChartConfig = (props = {}) => {
   // get chart
   const getChart = () => {
     // return mapped
-    return [['area', 'Area'], ['bar', 'Bar'], ['line', 'Line'], ['pie', 'Pie'], ['donut', 'Donut'], ['polarArea', 'Polar Area'], ['radialBar', 'Radial Bar']].map(([type, title]) => {
+    return [['total', 'Total'], ['area', 'Area'], ['bar', 'Bar'], ['line', 'Line'], ['pie', 'Pie'], ['donut', 'Donut'], ['polarArea', 'Polar Area'], ['radialBar', 'Radial Bar']].map(([type, title]) => {
       // return values
       return {
         value : type,
@@ -196,7 +196,13 @@ const BlockChartConfig = (props = {}) => {
       
       { !!props.block.totals && (
         <FormGroup>
-          <FormControlLabel control={ <Switch defaultChecked={ props.block.previous } onChange={ (e) => setBlock('previous', e.target.checked) } /> } label="Enable Since Previous" />
+          <FormControlLabel control={ <Switch defaultChecked={ props.block.change } onChange={ (e) => setBlock('change', e.target.checked) } /> } label="Enable Change %" />
+        </FormGroup>
+      ) }
+      
+      { ['bar', 'area', 'line'].includes(props.block.chart || 'area') && (
+        <FormGroup>
+          <FormControlLabel control={ <Switch defaultChecked={ props.block.previous } onChange={ (e) => setBlock('previous', e.target.checked) } /> } label="Enable Previous" />
         </FormGroup>
       ) }
 
@@ -317,6 +323,19 @@ const BlockChartConfig = (props = {}) => {
                     </TextField>
                   </>
                 ) }
+
+                <View
+                  type="field"
+                  view="input"
+                  mode="handlebars"
+                  struct="code"
+                  field={ {
+                    label : 'Display',
+                  } }
+                  value={ metric.display || '{{ value }}' }
+                  dashup={ props.dashup }
+                  onChange={ (f, val) => setMetric(metric, 'display', val) }
+                />
 
                 <Box my={ 2 }>
                   <Divider />

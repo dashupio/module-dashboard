@@ -4,7 +4,7 @@ import shortid from 'shortid';
 import Measure from 'react-measure';
 import GridLayout from 'react-grid-layout';
 import React, { useState, useEffect } from 'react';
-import { Box, Modal, Button, Page, Block, View, Select, Tooltip, IconButton, Icon, Menu, MenuItem } from '@dashup/ui';
+import { Box, Modal, Button, Page, Block, View, Select, Tooltip, IconButton, Icon, Menu, MenuItem, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@dashup/ui';
 
 // import scss
 import './dashboard.scss';
@@ -25,11 +25,12 @@ const PageDashboard = (props = {}) => {
   const [menu, setMenu] = useState(false);
   const [width, setWidth] = useState(-1);
   const [range, setRange] = useState('month');
+  const [share, setShare] = useState(false);
   const [saving, setSaving] = useState(false);
   const [config, setConfig] = useState(false);
-  const [remove, setRemove] = useState(null);
   const [bConfig, setBConfig] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [removing, setRemoving] = useState(null);
   const [updating, setUpdating] = useState(false);
   const [rangeMenu, setRangeMenu] = useState(false);
 
@@ -150,7 +151,7 @@ const PageDashboard = (props = {}) => {
     const newBlocks = (props.page.get('data.blocks') || []).filter((b) => b.uuid !== block.uuid);
 
     // loading
-    setRemove(null);
+    setRemoving(null);
     setSaving(true);
     
     // set page
@@ -277,36 +278,36 @@ const PageDashboard = (props = {}) => {
   }, [props.page.get('_id')]);
   
   // remove jsx
-  const removeJsx = remove && (
-    <Modal show onHide={ (e) => setRemove(null) }>
-      <Modal.Header closeButton>
-        <Modal.Title>
-          Removing <b>{ remove.label || remove.uuid }</b>
-        </Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-        <p className="lead">
-          Are you sure you want to remove <b>{ remove.label || 'this Block' }</b>?
-        </p>
-      </Modal.Body>
-      <Modal.Footer>
-        <Button variant="secondary" onClick={ (e) => !setRemove(null) && e.preventDefault() }>
-          Close
+  const removeJsx = removing && (
+    <Dialog
+      open={ !!removing }
+      onClose={ () => setRemoving(null) }
+    >
+      <DialogTitle>
+        Confirm Remove
+      </DialogTitle>
+      <DialogContent>
+        <DialogContentText>
+          Are you sure you want to remove <b>{ removing.label || 'this Block' }</b>?
+        </DialogContentText>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={ () => setRemoving(null) }>Cancel</Button>
+        <Button color="error" onClick={ (e) => !setRemoving(null) && onRemove(removing) }>
+          Remove
         </Button>
-        <Button variant="danger" className="ms-auto" onClick={ (e) => onRemove(remove) }>
-          Confirm
-        </Button>
-      </Modal.Footer>
-    </Modal>
+      </DialogActions>
+    </Dialog>
   );
 
   // return jsx
   return (
-    <Page { ...props } require={ props.require } bodyClass="flex-column">
+    <Page { ...props } require={ props.require } onConfig={ () => setConfig(true) } onShare={ () => setShare(true) }>
 
+      <Page.Share show={ share } onHide={ (e) => setShare(false) } />
       <Page.Config show={ config } onHide={ (e) => setConfig(false) } />
 
-      <Page.Menu onConfig={ () => setConfig(true) } presence={ props.presence }>
+      <Page.Menu presence={ props.presence }>
         { !updating && (
           props.menu ? props.menu({ updating }) : (
             <>
@@ -425,7 +426,7 @@ const PageDashboard = (props = {}) => {
                               onClone={ onClone }
                               updating={ updating }
                               onConfig={ setBConfig }
-                              onRemove={ setRemove }
+                              onRemove={ setRemoving }
                               setBlock={ setBlock }
                               { ...getProps() }
                             />
@@ -439,8 +440,8 @@ const PageDashboard = (props = {}) => {
             } }
           </Measure>
         </div>
-        { bConfig && <Block.Config show block={ bConfig } onRemove={ setRemove } model={ props.page.get('data.model') } setBlock={ setBlock } onHide={ () => setBConfig(null) } { ...getProps() } /> }
-        <Block.Menu show={ menu } available={ props.available.blocks } onBlock={ onCreate } onHide={ () => setMenu(false) } />
+        { bConfig && <Block.Config show block={ bConfig } onRemove={ setRemoving } model={ props.page.get('data.model') } setBlock={ setBlock } onHide={ () => setBConfig(null) } { ...getProps() } /> }
+        <Block.Menu show={ menu } available={ props.available.blocks.filter((b) => (b.categories || []).includes(props.page.get('type'))) } onBlock={ onCreate } onHide={ () => setMenu(false) } />
         { removeJsx }
       </Page.Body>
     </Page>
